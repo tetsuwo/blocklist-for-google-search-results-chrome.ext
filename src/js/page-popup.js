@@ -1,8 +1,3 @@
-/*!
- * JavaScript for Pop-up Page
- *
- * @author Tetsuwo OISHI
- */
 
 DOM('#blocklist').value = db.get('raw_blocklist');
 

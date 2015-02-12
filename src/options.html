@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="twitter:widgets:csp" content="on">
+        <title>Options | Blocklist for Google Search Results</title>
+        <link rel="stylesheet" href="css/common.css">
+        <link rel="stylesheet" href="css/page-options.css">
+        <script src="lib/lodash.min.js"></script>
+        <script src="lib/ChromeDB.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/utils.js"></script>
+        <script src="js/functions.js"></script>
+    </head>
+    <body>
+        <div id="container" style="width: 600px; height: 100%;">
+            <header>
+                <h1>Google 検索結果に表示しないドメイン・URL リスト</h1>
+            </header>
+            <section class="clearfix">
+                <p>
+                    下記のテキストエリアに <b>http://www.example.com/hoge/</b> と入力して適用すると URL のドメイン（<b>www.example.com</b>）だけがブロックリストとして登録され、 Google 検索結果で www.example.com と<b>完全に一致</b>した場合に一致した検索結果行を非表示にします。
+                </p>
+                <textarea id="blocklist"></textarea>
+                <button id="apply">適用</button>
+                <!--<button id="block">現在表示中の「<span id="current-host"></span>」をブロック</button>-->
+                <button id="open-optimized-blocklist">最適化後のブロックリストを表示</button>
+                <textarea id="optimized-blocklist" style="display:none;"></textarea>
+            </section>
+            <hr>
+            <header>
+                <h1>URL 前方一致に切り替えたいドメインリスト</h1>
+            </header>
+            <section class="clearfix">
+                <p>
+                    下記のテキストエリアに <b>ameblo.jp</b> などのドメインを入力して適用すると、Google 検索結果の URL が ameblo.jp と<b>完全に一致</b>した場合に、一致条件をドメイン完全一致ではなく URL 前方一致に変更します。
+                </p>
+                <textarea id="blocklist-include-path"></textarea>
+                <button id="apply-blocklist-include-path">適用</button>
+            </section>
+            <footer class="clearfix">
+                <div class="clearfix">
+                    <small class="copyright">
+                        Blocklist for Google Search Results - developed by <a href="http://tetsuwo.tumblr.com/" target="_blank">Tetsuwo OISHI</a>.
+                    </small>
+                </div>
+            </footer>
+        </div>
+        <script src="js/page-popup.js"></script>
+    </body>
+</html>

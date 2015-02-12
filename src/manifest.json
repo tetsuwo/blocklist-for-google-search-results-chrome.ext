@@ -4,20 +4,21 @@
   "background": {
     "page": "background.html"
   },
+  "options_page": "options.html",
   "browser_action": {
     "default_popup": "popup.html",
-    "default_icon": "images/icon5.png"
+    "default_icon": "images/icon-browser-action.png"
   },
   "icons": {
-    "16": "images/icon5.png",
-    "48": "images/icon5.png",
-    "128": "images/icon5.png"
+    "16": "images/icon512.png",
+    "48": "images/icon512.png",
+    "128": "images/icon512.png"
   },
   "permissions": [
     "tabs",
     "*://*/*"
   ],
-  "version": "0.0.1.4",
+  "version": "0.0.1.5",
   "manifest_version": 2,
   "content_security_policy":
     "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com; object-src 'self'"

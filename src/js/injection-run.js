@@ -1,16 +1,15 @@
-/*!
- * JavaScript for Injection
- *
- * @author Tetsuwo OISHI
- */
 
-console.log('injection', 'run');
+console.log('Blocklist for GSR', 'run');
 
 // ----
 
 Blocklist.inject = {};
 
 Blocklist.inject._blocklist = null;
+
+Blocklist.inject.MARK_NAME = 'blocklist-for-gsr-injection';
+
+Blocklist.inject.INTERVAL = 3000;
 
 Blocklist.inject.SELECTOR_SEARCH_RESULT = '.g';
 Blocklist.inject.SELECTOR_SEARCH_RESULT_URL = '.r a';
@@ -43,7 +42,7 @@ Blocklist.inject.refreshBlocklist = function() {
 };
 
 Blocklist.inject.hideMatchUrl = function() {
-    console.log('hideMatchUrl', Blocklist.inject._blocklist);
+    //console.log('hideMatchUrl', Blocklist.inject._blocklist);
     if (!Blocklist.inject._blocklist) {
         return;
     }
@@ -55,7 +54,7 @@ Blocklist.inject.hideMatchUrl = function() {
             if (a) {
                 var url = a.getAttribute('href');
                 var domain = Blocklist.common.getDomain(url);
-                console.log('URL', url, 'DOMAIN', domain);
+                //console.log('URL', url, 'DOMAIN', domain);
                 if (Blocklist.common.match(Blocklist.inject._blocklist, domain)) {
                     result.style.display = 'none';
                 } else {
@@ -70,11 +69,25 @@ Blocklist.inject.execute = function() {
     Blocklist.inject.refreshBlocklist();
 };
 
+Blocklist.inject.addedMark = function() {
+    return document.getElementById(Blocklist.inject.MARK_NAME) !== null;
+};
+
+Blocklist.inject.addMark = function() {
+    if (!Blocklist.inject.addedMark()) {
+        var div = document.createElement('div');
+        div.setAttribute('id', Blocklist.inject.MARK_NAME);
+        document.body.appendChild(div);
+    }
+};
+
 Blocklist.inject.start = function() {
+    Blocklist.inject.addMark();
+    console.log('Blocklist for GSR', 'injected');
     Blocklist.inject.execute();
     window.setInterval(function() {
         Blocklist.inject.execute();
-    }, 3000);
+    }, Blocklist.inject.INTERVAL);
 };
 
 Blocklist.inject.listenMessage = function() {
@@ -91,5 +104,7 @@ Blocklist.inject.listenMessage = function() {
     });
 };
 
-Blocklist.inject.start();
-Blocklist.inject.listenMessage();
+if (!Blocklist.inject.addedMark()) {
+    Blocklist.inject.start();
+    Blocklist.inject.listenMessage();
+}
