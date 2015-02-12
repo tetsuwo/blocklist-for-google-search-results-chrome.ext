@@ -1,0 +1,75 @@
+/**
+ * POPUP PAGE STYLESHEET
+ *
+ */
+
+body {
+	margin: 0;
+}
+
+body, input {
+	font-size: 13px;
+}
+
+pre {
+	padding: .5em;
+	font-family: Arial;
+	line-height: 1.4;
+}
+
+#container {
+}
+
+
+/* -- HEADER -- */
+header {
+    padding: .5em 1em;
+}
+    header h1 {
+    	font-size: 14px;
+    }
+
+/* PAGEBODY */
+section {
+	padding: .5em 1em;
+}
+
+#blocklist {
+    width: 100%;
+    height: 200px;
+    box-sizing: border-box;
+    margin: 5px 0;
+}
+#optimized-blocklist {
+    width: 100%;
+    height: 100px;
+    box-sizing: border-box;
+    margin: 5px 0;
+}
+
+
+/* -- FOOTER -- */
+footer {
+    padding: .5em 1em;
+}
+footer,
+footer a {
+	font-size: 90%;
+	font-weight: bold;
+	line-height: 1.5;
+	text-decoration: none;
+}
+footer a:hover {
+}
+    footer nav * {
+        font-size: 100%;
+    }
+	footer .copyright {
+		margin-top: 1em;
+		font-weight: bold!important;
+		display: block;
+		font-size: 90%;
+		font-family: Arial, 'Times New Roman', Verdana, sans-serif;
+	}
+
+

@@ -1,0 +1,24 @@
+{
+  "name": "Blocklist for Google Search Results",
+  "description": "URL in Blocklist will remove from your Google search results.",
+  "background": {
+    "page": "background.html"
+  },
+  "browser_action": {
+    "default_popup": "popup.html",
+    "default_icon": "images/icon5.png"
+  },
+  "icons": {
+    "16": "images/icon5.png",
+    "48": "images/icon5.png",
+    "128": "images/icon5.png"
+  },
+  "permissions": [
+    "tabs",
+    "*://*/*"
+  ],
+  "version": "0.0.1.4",
+  "manifest_version": 2,
+  "content_security_policy":
+    "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com; object-src 'self'"
+}

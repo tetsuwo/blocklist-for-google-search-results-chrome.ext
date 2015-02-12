@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="twitter:widgets:csp" content="on">
+        <title>Popup | Blocklist for Google Search Results</title>
+        <link rel="stylesheet" href="css/common.css">
+        <link rel="stylesheet" href="css/page-popup.css">
+        <script src="lib/lodash.min.js"></script>
+        <script src="lib/ChromeDB.js"></script>
+        <script src="js/common.js"></script>
+        <script src="js/utils.js"></script>
+        <script src="js/functions.js"></script>
+    </head>
+    <body>
+        <div id="container" style="width: 600px; height: 100%;">
+            <header>
+                <h1>Google 検索結果から除外したドメイン・ホストの一覧</h1>
+            </header>
+            <section class="clearfix">
+                <textarea id="blocklist"></textarea>
+                <button id="apply">適用</button>
+                <!--<button id="block">現在表示中の「<span id="current-host"></span>」をブロック</button>-->
+                <button id="open-optimized-blocklist">最適化後のブロックリストを表示</button>
+                <textarea id="optimized-blocklist" style="display:none;"></textarea>
+            </section>
+            <footer class="clearfix">
+                <div class="clearfix">
+                    <small class="copyright">
+                        Blocklist for Google Search Results - developed by <a href="http://tetsuwo.tumblr.com/" target="_blank">Tetsuwo OISHI</a>.
+                    </small>
+                </div>
+            </footer>
+        </div>
+        <script src="js/page-popup.js"></script>
+    </body>
+</html>
