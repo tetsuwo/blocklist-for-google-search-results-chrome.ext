@@ -1,19 +1,60 @@
+// Copyright 2015 toishi-tech. All Rights Reserved.
 
+/**
+ * Google search result page injection script.
+ *
+ * @author tetsuwo.oishi@gmail.com (Tetsuwo OISHI)
+ */
 console.log('Blocklist for GSR', 'run');
 
 // ----
 
+/**
+ * Inject Space
+ */
 Blocklist.inject = {};
 
+/**
+ * Blocklist
+ * @type {Array}
+ */
 Blocklist.inject._blocklist = null;
 
+/**
+ */
+Blocklist.inject.debug = function(a, b) {
+    console.log(a, b);
+};
+
+/**
+ * ID name of inject element
+ * @type {String}
+ */
 Blocklist.inject.MARK_NAME = 'blocklist-for-gsr-injection';
 
+/**
+ * Interval
+ * @type {Number}
+ */
 Blocklist.inject.INTERVAL = 3000;
 
+/**
+ * GSRP Mode
+ * @type {String}
+ */
+Blocklist.inject.GSRP_MODE = 'hide';
+
+/**
+ * Class names of Search result
+ * @type {Number}
+ */
 Blocklist.inject.SELECTOR_SEARCH_RESULT = '.g';
 Blocklist.inject.SELECTOR_SEARCH_RESULT_URL = '.r a';
 
+/**
+ * Callback of a get blocklist
+ * @param {Object} response
+ */
 Blocklist.inject.callbackGetBlocklist = function(response) {
     //console.log('callbackGetBlocklist', response);
     switch (response.type) {
@@ -26,8 +67,12 @@ Blocklist.inject.callbackGetBlocklist = function(response) {
     }
 };
 
+/**
+ * After refresh for blocklist
+ */
 Blocklist.inject.refreshBlocklistAfter = function() {
-    Blocklist.inject.hideMatchUrl();
+    //console.log('Blocklist.inject._blocklist', Blocklist.inject._blocklist);
+    Blocklist.inject.handleLine(Blocklist.inject.GSRP_MODE);
 };
 
 Blocklist.inject.refreshBlocklist = function() {
@@ -41,31 +86,82 @@ Blocklist.inject.refreshBlocklist = function() {
     );
 };
 
-Blocklist.inject.hideMatchUrl = function() {
-    //console.log('hideMatchUrl', Blocklist.inject._blocklist);
+/**
+ * Fetch search results
+ * @return {Array}
+ */
+Blocklist.inject.fetchSearchResults = function() {
+    return document.querySelectorAll(Blocklist.inject.SELECTOR_SEARCH_RESULT);
+};
+
+/**
+ * Fetch search result a URL
+ * @return {Object}
+ */
+Blocklist.inject.fetchSearchResultURL = function(element) {
+    return element ? element.querySelector(Blocklist.inject.SELECTOR_SEARCH_RESULT_URL) : null;
+};
+
+Blocklist.inject.showLineMatchBlocklist = function() {
     if (!Blocklist.inject._blocklist) {
         return;
     }
-    var results = document.querySelectorAll(Blocklist.inject.SELECTOR_SEARCH_RESULT);
-    if (results && 0 < results.length) {
-        for (var i = 0, len = results.length; i < len; i++) {
-            var result = results[i];
-            var a = result.querySelector(Blocklist.inject.SELECTOR_SEARCH_RESULT_URL);
-            if (a) {
-                var url = a.getAttribute('href');
-                var domain = Blocklist.common.getDomain(url);
-                //console.log('URL', url, 'DOMAIN', domain);
-                if (Blocklist.common.match(Blocklist.inject._blocklist, domain)) {
-                    result.style.display = 'none';
-                } else {
-                    result.style.display = 'block';
-                }
-            }
+    console.log('Blocklist.inject.showLineMatchBlocklist');
+    //console.time('inject.start');
+    var results = Blocklist.inject.fetchSearchResults();
+    if (!results || !results.length) {
+        return;
+    }
+    for (var i = 0, len = results.length; i < len; i++) {
+        var line = results[i];
+        var a = Blocklist.inject.fetchSearchResultURL(line);
+        if (!a) {
+            return;
+        }
+        var url = a.getAttribute('href');
+        //var domain = Blocklist.common.getDomain(url);
+        var domainPath = Blocklist.common.getAfterScheme(url);
+        //console.log('URL', url, 'DOMAIN', domainPath);
+        if (Blocklist.common.match(Blocklist.inject._blocklist, domainPath)) {
+            line.style.backgroundColor = '#dddddd';
+            //line.style.padding = '10px';
+        }
+        line.style.display = 'block';
+    }
+    //console.timeEnd('inject.start');
+};
+
+Blocklist.inject.hideLineMatchBlocklist = function() {
+    if (!Blocklist.inject._blocklist) {
+        return;
+    }
+    console.log('Blocklist.inject.hideLineMatchBlocklist');
+    //console.time('inject.start');
+    var results = Blocklist.inject.fetchSearchResults();
+    if (!results || !results.length) {
+        return;
+    }
+    for (var i = 0, len = results.length; i < len; i++) {
+        var line = results[i];
+        var a = Blocklist.inject.fetchSearchResultURL(line);
+        if (!a) {
+            return;
+        }
+        var url = a.getAttribute('href');
+        //var domain = Blocklist.common.getDomain(url);
+        var domainPath = Blocklist.common.getAfterScheme(url);
+        //console.log('URL', url, 'DOMAIN', domainPath);
+        if (Blocklist.common.match(Blocklist.inject._blocklist, domainPath)) {
+            line.style.display = 'none';
+        } else {
+            line.style.display = 'block';
         }
     }
+    console.timeEnd('inject.start');
 };
 
 Blocklist.inject.execute = function() {
+    Blocklist.inject.sendRequestGsrpMode();
     Blocklist.inject.refreshBlocklist();
 };
 
@@ -85,14 +181,38 @@ Blocklist.inject.start = function() {
     Blocklist.inject.addMark();
     console.log('Blocklist for GSR', 'injected');
     Blocklist.inject.execute();
-    window.setInterval(function() {
+    Blocklist.inject.timerId = window.setInterval(function() {
         Blocklist.inject.execute();
     }, Blocklist.inject.INTERVAL);
 };
 
+Blocklist.inject.end = function() {
+    window.clearInterval(Blocklist.inject.timerId);
+};
+
+Blocklist.inject.sendRequestGsrpMode = function() {
+    chrome.runtime.sendMessage(
+        { type: Blocklist.sendType.GET_GSRP_MODE },
+        Blocklist.inject.callbackGsrpMode
+    );
+};
+
+Blocklist.inject.handleLine = function(mode) {
+    if (mode === 'show') {
+        Blocklist.inject.showLineMatchBlocklist();
+    } else {
+        Blocklist.inject.hideLineMatchBlocklist();
+    }
+};
+
+Blocklist.inject.callbackGsrpMode = function(response) {
+    console.log('Blocklist.inject.handleGsrpMode', response);
+    Blocklist.inject.GSRP_MODE = response.gsrpMode;
+};
+
 Blocklist.inject.listenMessage = function() {
     chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
-        //console.log('inject.runtime.onMessage', request);
+        console.log('inject.runtime.onMessage', request);
         switch (request.type) {
             case Blocklist.sendType.SEND_BLOCKLIST:
                 Blocklist.inject._blocklist = request.blocklist;

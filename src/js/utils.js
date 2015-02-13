@@ -1,52 +1,58 @@
 
-/**
- * I18N [InternationalizatioN]
- *
- * @author Tetsuwo OISHI
- */
-window.i18n = function(callback) {
-    var getmsg = function(a) {
-        return chrome.i18n.getMessage(a) ? chrome.i18n.getMessage(a) : false;
-    };
-    var res = document.querySelectorAll('[i18n]');
-    for (var i = 0; i < res.length; i++) {
-        var data  = res[i], msg = false, msgs  = [], msgid = data.getAttribute('i18n');
-        if (msgid.indexOf('+') > -1) {
-            msgids = msgid.split('+');
-            for (var h in msgids) {
-                msgs.push(getmsg(msgids[h]));
-            }
-            msg = msgs.join(' ');
-        } else {
-            msg = getmsg(msgid);
-        }
-        if (msg !== false) {
-            data.innerHTML = msg;
-        }
-    }
-    if (typeof callback === 'function') {
-        callback();
-    }
+Blocklist.utils = {};
+
+Blocklist.utils.convertArray = function(text) {
+    return text.split("\n");
 };
 
-/**
- * localStorage aliase object
- *
- * @author Tetsuwo OISHI
- */
-window.ls = new function() {
-    this.set = function(a, b) {
-        window.localStorage.setItem(a, JSON.stringify(b));
-    };
-    this.get = function(a) {
-//        console.log(a + ' >> ' + window.localStorage[a]);
-        return window.localStorage[a] ? JSON.parse(window.localStorage[a]) : false;
-    };
-    this.i18n = function(a) {
-       return ls.get(a) || chrome.i18n.getMessage(a);
-    };
-    this.rm = function(a) {
-        window.localStorage.removeItem(a);
-    };
+Blocklist.utils.getBlocklist = function(urls, afterSchemes) {
+    var domain, blocklist = [];
+    for (var i = 0, len = urls.length; i < len; i++) {
+        var url = _.trim(urls[i]), domain = null;
+        if (_.isEmpty(url)) {
+            continue;
+        }
+        // ドメイン形式にマッチしたら
+        if (url.match(Blocklist.regex.DOMAIN)) {
+            domain = RegExp.$1;
+            //console.log(domain, afterSchemes);
+            // scheme より後にマッチさせる場合
+            if (afterSchemes && Blocklist.common.equal(afterSchemes, domain)) {
+                //console.log('matched', domain, afterSchemes);
+                if (url.match(Blocklist.regex.AFTER_SCHEME)) {
+                    console.log('Blocklist.regex.AFTER_SCHEME', url, RegExp.$1);
+                    blocklist.push(RegExp.$1);
+                }
+            } else {
+                blocklist.push(domain);
+            }
+        }
+
+        if (!domain) {
+            blocklist.push(_.trimRight(url, '/'));
+        }
+    }
+    return _.uniq(blocklist);
+};
+
+Blocklist.utils.fetchAfterSchemeDomains = function() {
+    return db.get('after_scheme_domains');
+};
+
+Blocklist.utils.buildBlocklist = function(raw_blocklist) {
+    var blocklist_urls = Blocklist.utils.convertArray(raw_blocklist);
+    db.set('raw_blocklist', raw_blocklist);
+    db.set('blocklist',
+        Blocklist.utils.getBlocklist(
+            blocklist_urls,
+            Blocklist.utils.fetchAfterSchemeDomains()
+        )
+    );
+    var list = db.get('blocklist'), regexp_blocklist = [];
+    for (var i = 0, len = list.length; i < len; i++) {
+        var url = list[i];
+        regexp_blocklist.push(url.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1"));
+    }
+    db.set('regexp_blocklist', regexp_blocklist);
 };
 
