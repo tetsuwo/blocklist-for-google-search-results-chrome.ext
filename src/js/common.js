@@ -69,11 +69,11 @@ Blocklist.common.equal = function(haystack, needle) {
 };
 
 Blocklist.common.match = function(haystack, needle) {
-    for (var i = 0, len = haystack.length; i < len; i++) {
-        //console.log(haystack[i], new RegExp(needle), needle);
-        //console.log(needle, new RegExp(haystack[i]));
-        //if (haystack[i].match(new RegExp(needle))) {
-        if (needle.match(new RegExp(haystack[i]))) {
+    var len = haystack.length;
+    for (var i = 0; i < len; i++) {
+        if (haystack[i].exec(needle)) {
+        //if (needle.match(haystack[i])) {
+        //if (needle.match(new RegExp(haystack[i], 'i'))) {
             return true;
         }
     }

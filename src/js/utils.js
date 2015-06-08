@@ -12,22 +12,18 @@ Blocklist.utils.getBlocklist = function(urls, afterSchemes) {
         if (_.isEmpty(url)) {
             continue;
         }
-        // ドメイン形式にマッチしたら
         if (url.match(Blocklist.regex.DOMAIN)) {
             domain = RegExp.$1;
-            //console.log(domain, afterSchemes);
-            // scheme より後にマッチさせる場合
             if (afterSchemes && Blocklist.common.equal(afterSchemes, domain)) {
-                //console.log('matched', domain, afterSchemes);
                 if (url.match(Blocklist.regex.AFTER_SCHEME)) {
-                    console.log('Blocklist.regex.AFTER_SCHEME', url, RegExp.$1);
-                    blocklist.push(RegExp.$1);
+                    var afterScheme = RegExp.$1;
+                    console.log('Blocklist.regex.AFTER_SCHEME', url, afterScheme);
+                    blocklist.push(afterScheme);
                 }
             } else {
                 blocklist.push(domain);
             }
         }
-
         if (!domain) {
             blocklist.push(_.trimRight(url, '/'));
         }
@@ -51,8 +47,10 @@ Blocklist.utils.buildBlocklist = function(raw_blocklist) {
     var list = db.get('blocklist'), regexp_blocklist = [];
     for (var i = 0, len = list.length; i < len; i++) {
         var url = list[i];
-        regexp_blocklist.push(url.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1"));
+        var replacedUrl = '^' + url.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
+        regexp_blocklist.push(replacedUrl);
     }
     db.set('regexp_blocklist', regexp_blocklist);
+    //console.log('regexp_blocklist', regexp_blocklist);
 };
 
