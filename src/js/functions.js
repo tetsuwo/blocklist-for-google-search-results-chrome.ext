@@ -7,4 +7,3 @@
 function DOM(selector) {
     return document.querySelector(selector);
 }
-

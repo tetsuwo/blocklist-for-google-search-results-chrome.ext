@@ -123,6 +123,7 @@ Blocklist.inject.sendRequestGsrpMode = function() {
 
 /**
  * Fetch search results
+ *
  * @return {Array}
  */
 Blocklist.inject.fetchSearchResults = function() {
@@ -131,12 +132,18 @@ Blocklist.inject.fetchSearchResults = function() {
 
 /**
  * Fetch search result a URL
+ *
  * @return {Object}
  */
 Blocklist.inject.fetchSearchResultURL = function(element) {
     return element ? element.querySelector(Blocklist.inject.SELECTOR_SEARCH_RESULT_URL) : null;
 };
 
+/**
+ * Show a line matched in blocklist
+ *
+ * @return void
+ */
 Blocklist.inject.showLineMatchBlocklist = function() {
     if (!Blocklist.inject._blocklist) {
         return;
@@ -154,8 +161,19 @@ Blocklist.inject.showLineMatchBlocklist = function() {
             continue;
         }
         var url = a.getAttribute('href');
-        var domainPath = Blocklist.common.getAfterScheme(url);
-        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, domainPath)) {
+        var targetUrl = url;
+        //var targetUrl = '/url?url=' + encodeURIComponent(url);
+        if (targetUrl.indexOf('/') === 0) {
+            var getParams = Blocklist.common.getUrlVars(targetUrl);
+            targetUrl = getParams.url;
+        } else if (targetUrl.indexOf('https://www.google.') === 0) {
+            var getParams = Blocklist.common.getUrlVars(targetUrl);
+            targetUrl = getParams.url;
+        } else {
+            targetUrl = Blocklist.common.getAfterScheme(url);
+        }
+        //console.log(url, targetUrl);
+        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, targetUrl)) {
             line.style.backgroundColor = '#dddddd';
             //line.style.padding = '10px';
             if (line.className.indexOf(Blocklist.inject.BLOCKED_NAME) === -1) {
@@ -188,8 +206,19 @@ Blocklist.inject.hideLineMatchBlocklist = function() {
             continue;
         }
         var url = a.getAttribute('href');
-        var domainPath = Blocklist.common.getAfterScheme(url);
-        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, domainPath)) {
+        var targetUrl = url;
+        //var targetUrl = '/url?url=' + encodeURIComponent(url);
+        if (targetUrl.indexOf('/') === 0) {
+            var getParams = Blocklist.common.getUrlVars(targetUrl);
+            targetUrl = getParams.url;
+        } else if (targetUrl.indexOf('https://www.google.') === 0) {
+            var getParams = Blocklist.common.getUrlVars(targetUrl);
+            targetUrl = getParams.url;
+        } else {
+            targetUrl = Blocklist.common.getAfterScheme(url);
+        }
+        //console.log(url, targetUrl);
+        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, targetUrl)) {
             line.style.display = 'none';
             if (line.className.indexOf(Blocklist.inject.BLOCKED_NAME) === -1) {
                 line.className = line.className + ' ' + Blocklist.inject.BLOCKED_NAME;
