@@ -156,20 +156,21 @@ Blocklist.inject.showLineMatchBlocklist = function() {
     console.log('Blocklist.inject.showLineMatchBlocklist - target.length = ', len);
     for (var i = 0; i < len; i++) {
         var line = results[i];
-        var a = Blocklist.inject.fetchSearchResultURL(line);
-        if (!a) {
+        var anchor = Blocklist.inject.fetchSearchResultURL(line);
+        if (!anchor) {
             continue;
         }
-        var url = a.getAttribute('href');
-        var targetUrl = url;
-        //var targetUrl = '/url?url=' + encodeURIComponent(url);
-        if (targetUrl.indexOf('/') === 0) {
-            var getParams = Blocklist.common.getUrlVars(targetUrl);
-            targetUrl = getParams.url;
-        } else if (targetUrl.indexOf('https://www.google.') === 0) {
-            var getParams = Blocklist.common.getUrlVars(targetUrl);
-            targetUrl = getParams.url;
-        } else {
+        var url = anchor.getAttribute('href');
+        var targetUrl = null;
+        //url = '/url?url=' + encodeURIComponent(url);
+        //var targetUrl = 'https://www.google.co.jp/url?url=' + encodeURIComponent(url);
+        if (url.indexOf('/') === 0 || url.indexOf('https://www.google.') === 0) {
+            var getParams = Blocklist.common.getUrlVars(url);
+            if (getParams && getParams.url) {
+                targetUrl = Blocklist.common.getAfterScheme(getParams.url);
+            }
+        }
+        if (targetUrl === null) {
             targetUrl = Blocklist.common.getAfterScheme(url);
         }
         //console.log(url, targetUrl);
@@ -201,20 +202,21 @@ Blocklist.inject.hideLineMatchBlocklist = function() {
     console.log('Blocklist.inject.hideLineMatchBlocklist - target.length = ', len);
     for (var i = 0; i < len; i++) {
         var line = results[i];
-        var a = Blocklist.inject.fetchSearchResultURL(line);
-        if (!a) {
+        var anchor = Blocklist.inject.fetchSearchResultURL(line);
+        if (!anchor) {
             continue;
         }
-        var url = a.getAttribute('href');
-        var targetUrl = url;
-        //var targetUrl = '/url?url=' + encodeURIComponent(url);
-        if (targetUrl.indexOf('/') === 0) {
-            var getParams = Blocklist.common.getUrlVars(targetUrl);
-            targetUrl = getParams.url;
-        } else if (targetUrl.indexOf('https://www.google.') === 0) {
-            var getParams = Blocklist.common.getUrlVars(targetUrl);
-            targetUrl = getParams.url;
-        } else {
+        var url = anchor.getAttribute('href');
+        var targetUrl = null;
+        //url = '/url?url=' + encodeURIComponent(url);
+        //var targetUrl = 'https://www.google.co.jp/url?url=' + encodeURIComponent(url);
+        if (url.indexOf('/') === 0 || url.indexOf('https://www.google.') === 0) {
+            var getParams = Blocklist.common.getUrlVars(url);
+            if (getParams && getParams.url) {
+                targetUrl = Blocklist.common.getAfterScheme(getParams.url);
+            }
+        }
+        if (targetUrl === null) {
             targetUrl = Blocklist.common.getAfterScheme(url);
         }
         //console.log(url, targetUrl);
