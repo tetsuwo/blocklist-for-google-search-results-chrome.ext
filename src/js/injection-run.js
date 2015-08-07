@@ -97,6 +97,10 @@ Blocklist.inject.callbackGsrpMode = function(response) {
     Blocklist.inject.GSRP_MODE = response.gsrpMode;
 };
 
+Blocklist.inject.getCompiledBlocklist = function() {
+    return Blocklist.inject._compiled_blocklist;
+};
+
 /**
  * After refresh for blocklist
  */
@@ -140,6 +144,16 @@ Blocklist.inject.fetchSearchResultURL = function(element) {
 };
 
 /**
+ * Is blocked URL
+ *
+ * @param {String} url
+ * @return {Boolean}
+ */
+Blocklist.inject.isBlocked = function(url) {
+    return Blocklist.common.match(Blocklist.inject.getCompiledBlocklist(), url);
+};
+
+/**
  * Show a line matched in blocklist
  *
  * @return void
@@ -153,6 +167,7 @@ Blocklist.inject.showLineMatchBlocklist = function() {
         return;
     }
     var len = results.length;
+    var regexp = new RegExp(Blocklist.inject.BLOCKED_NAME, 'g');
     console.log('Blocklist.inject.showLineMatchBlocklist - target.length = ', len);
     for (var i = 0; i < len; i++) {
         var line = results[i];
@@ -174,19 +189,49 @@ Blocklist.inject.showLineMatchBlocklist = function() {
             targetUrl = Blocklist.common.getAfterScheme(url);
         }
         //console.log(url, targetUrl);
-        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, targetUrl)) {
+        if (Blocklist.inject.isBlocked(targetUrl)) {
             line.style.backgroundColor = '#dddddd';
-            //line.style.padding = '10px';
+            line.style.padding = '10px';
             if (line.className.indexOf(Blocklist.inject.BLOCKED_NAME) === -1) {
                 line.className = line.className + ' ' + Blocklist.inject.BLOCKED_NAME;
             }
         } else {
+            //console.log('else', Blocklist.inject.BLOCKED_NAME, line.className, line.className.indexOf(Blocklist.inject.BLOCKED_NAME));
             if (-1 < line.className.indexOf(Blocklist.inject.BLOCKED_NAME)) {
-                line.className = line.className.replace(/blocklist\-for\-gsr\-blocked/g, '');
+                line.className = line.className.replace(regexp, '');
             }
         }
         line.style.display = 'block';
+
+        var el = line.querySelectorAll('.blocklist-for-gsr-action');
+        if (el.length === 0) {
+            var div = document.createElement('div');
+            div.className = 'blocklist-for-gsr-action';
+            var button = Blocklist.inject.addButton(
+                'URL をブロック',
+                'ab_button'
+            );
+            button.style.marginRight = '5px';
+            button.click = function() {
+            };
+            div.appendChild(button);
+            var button = Blocklist.inject.addButton(
+                'ドメインをブロック',
+                'ab_button'
+            );
+            button.style.marginRight = '5px';
+            div.appendChild(button);
+            line.appendChild(div);
+        }
     }
+};
+
+Blocklist.inject.addButton = function(name, className) {
+    var button = document.createElement('input');
+    button.type = 'button';
+    button.value = name;
+    button.className = className;
+    return button;
 };
 
 Blocklist.inject.hideLineMatchBlocklist = function() {
@@ -220,7 +265,7 @@ Blocklist.inject.hideLineMatchBlocklist = function() {
             targetUrl = Blocklist.common.getAfterScheme(url);
         }
         //console.log(url, targetUrl);
-        if (Blocklist.common.match(Blocklist.inject._compiled_blocklist, targetUrl)) {
+        if (Blocklist.inject.isBlocked(targetUrl)) {
             line.style.display = 'none';
             if (line.className.indexOf(Blocklist.inject.BLOCKED_NAME) === -1) {
                 line.className = line.className + ' ' + Blocklist.inject.BLOCKED_NAME;

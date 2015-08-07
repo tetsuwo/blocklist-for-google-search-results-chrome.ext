@@ -1,0 +1,11 @@
+{
+  "ID": {
+    "message": "en"
+  },
+  "ext_name": {
+    "message": "Blocklist for Google Search Results"
+  },
+  "ext_description": {
+    "message": "URL in Blocklist will remove from your Google search results."
+  }
+}

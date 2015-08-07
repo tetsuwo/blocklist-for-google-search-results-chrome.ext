@@ -1,6 +1,7 @@
 {
-  "name": "Blocklist for Google Search Results",
-  "description": "URL in Blocklist will remove from your Google search results.",
+  "name": "__MSG_ext_name__",
+  "description": "__MSG_ext_description__",
+  "default_locale": "en",
   "background": {
     "page": "background.html"
   },
@@ -18,7 +19,7 @@
     "tabs",
     "*://*/*"
   ],
-  "version": "0.0.2.3",
+  "version": "0.0.3.0",
   "manifest_version": 2,
   "content_security_policy":
     "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com; object-src 'self'"

@@ -1,0 +1,11 @@
+{
+  "ID": {
+    "message": "ja"
+  },
+  "ext_name": {
+    "message": "Google検索結果ブロックリスト"
+  },
+  "ext_description": {
+    "message": "Google 検索結果から指定した URL を除外する拡張機能です。営業リスト作成などにご利用いただけます。"
+  }
+}
