@@ -1,9 +1,14 @@
-/*!
+// Copyright 2015 toishi-tech. All Rights Reserved.
+
+/**
  * Blocklist for Background
  *
- * @author Tetsuwo OISHI
+ * @author tetsuwo.oishi@gmail.com (Tetsuwo OISHI)
  */
 
+/**
+ * Background Space
+ */
 Blocklist.bg = {};
 
 (function(bg) {
@@ -67,6 +72,7 @@ Blocklist.bg = {};
     bg.runBlock = function() {
         try {
             chrome.tabs.executeScript(null, { file: 'js/blocklist-common.js' });
+            chrome.tabs.executeScript(null, { file: 'js/blocklist-logger.js' });
             chrome.tabs.executeScript(null, { file: 'js/blocklist-inject.js' });
             chrome.tabs.executeScript(null, { file: 'js/injection-run.js' });
         } catch (e) {

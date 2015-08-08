@@ -5,7 +5,8 @@
  *
  * @author tetsuwo.oishi@gmail.com (Tetsuwo OISHI)
  */
-console.log('Blocklist for GSR', 'run');
+Blocklist.logger.setPrefixKey('{BlocklistGSR}');
+Blocklist.logger.info('RUN');
 
 // ----
 
