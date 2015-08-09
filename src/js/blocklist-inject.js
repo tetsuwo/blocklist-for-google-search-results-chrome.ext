@@ -56,11 +56,9 @@ Blocklist.inject = {};
      * Class names of Search result
      * @type {Number}
      */
-    ij.SELECTOR_SEARCH_RESULT = 'ol .g:not(.blocklist-for-gsr-blocked)';
-    //ij.SELECTOR_SEARCH_RESULT = 'ol .g';
-    //ij.SELECTOR_SEARCH_RESULT_URL = 'h3 a[href]';
+    //ij.SELECTOR_SEARCH_RESULT = 'ol .g:not(.blocklist-for-gsr-blocked)';
+    ij.SELECTOR_SEARCH_RESULT = 'ol .g';
     ij.SELECTOR_SEARCH_RESULT_URL = '.r a';
-    //ij.SELECTOR_SEARCH_RESULT = '#search ol li:not(.blocklist-for-gsr-blocked)';
 
     // ----
 
@@ -74,6 +72,10 @@ Blocklist.inject = {};
                     break;
 
                 default:
+                    Blocklist.logger.error(
+                        'Not found such type (inject.listenMessage)',
+                        request.type
+                    );
                     break;
             }
         });
@@ -89,89 +91,58 @@ Blocklist.inject = {};
         );
     };
 
-    ij.sendRequestPostBlockUrl = function(url) {
-        this.sendRequest(
-            {
-                type: Blocklist.type.POST_BLOCK_URL,
-                data: {
-                    url: url
-                }
-            },
-            this.callbackResponse
-        );
-    };
-
-    ij.sendRequestPostUnlockUrl = function() {
-        this.sendRequest(
-            {
-                type: Blocklist.type.POST_UNBLOCK_URL,
-                data: {
-                    url: url
-                }
-            },
-            this.callbackResponse
-        );
-    };
-
     ij.callbackResponse = function(response) {
-        Blocklist.logger.info(response.type, response);
+        Blocklist.logger.info('callbackResponse', response.type, response);
         switch (response.type) {
-            case Blocklist.type.GET_GSRP_MODE:
+            case Blocklist.type.SEND_GSRP_MODE:
                 ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
                 ij.GSRP_MODE = response.gsrpMode;
                 break;
 
-            case Blocklist.type.GET_GSRP_MODE:
-                ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
-                ij.GSRP_MODE = response.gsrpMode;
-                break;
-        }
-    };
-
-    ij.callbackGsrpMode = function(response) {
-        ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
-        ij.GSRP_MODE = response.gsrpMode;
-    };
-
-    /**
-     * Callback of a get blocklist
-     * @param {Object} response
-     */
-    ij.callbackGetBlocklist = function(response) {
-        switch (response.type) {
             case Blocklist.type.SEND_BLOCKLIST:
-                ij._blocklist = response.blocklist;
-                var list = response.blocklist, compiled = [];
+            case Blocklist.type.GET_BLOCK_URL:
+                ij._blocklist = response.data.blocklist;
+                var list = response.data.blocklist, compiled = [];
                 for (var i = 0, len = list.length; i < len; i++) {
                     var url = list[i];
                     compiled.push(new RegExp(url));
                 }
                 ij._compiled_blocklist = compiled;
+                ij.refreshBlocklistAfter();
                 break;
 
             default:
+                Blocklist.logger.error('Not found such type (callback)', response.type);
                 break;
         }
     };
 
     /**
      * After refresh for blocklist
+     *
+     * @return void
      */
     ij.refreshBlocklistAfter = function() {
         this.handleLine(this.GSRP_MODE);
     };
 
+    /**
+     * Refresh blocklist
+     *
+     * @return void
+     */
     ij.refreshBlocklist = function() {
         var that = ij;
-        chrome.runtime.sendMessage(
-            { type: Blocklist.type.GET_BLOCKLIST },
-            function(response) {
-                that.callbackGetBlocklist(response);
-                that.refreshBlocklistAfter();
-            }
+        this.sendRequest(
+            Blocklist.type.GET_BLOCKLIST
         );
     };
 
+    /**
+     * Get compiled blocklist
+     *
+     * @return {Array}
+     */
     ij.getCompiledBlocklist = function() {
         return this._compiled_blocklist;
     };
@@ -266,64 +237,6 @@ Blocklist.inject = {};
         }
     };
 
-    ij.addButton = function(name, className) {
-        var button = document.createElement('input');
-        button.type = 'button';
-        button.value = name;
-        button.className = className;
-        return button;
-    };
-
-    ij.getRowActionButtons = function(blocked, url) {
-        if (blocked) {
-            var btnUrl = ij.addButton(
-                'URL ブロックを解除',
-                'ab_button blocklist-for-gsr-button'
-            );
-            btnUrl.style.marginRight = '5px';
-            btnUrl.setAttribute('data-url', url);
-            btnUrl.setAttribute('data-type', 'unblocked-url');
-
-            var btnDomain = this.addButton(
-                'ドメインブロックを解除',
-                'ab_button blocklist-for-gsr-button'
-            );
-            btnDomain.style.marginRight = '5px';
-            btnDomain.setAttribute('data-url', url);
-            btnDomain.setAttribute('data-type', 'unblocked-domain');
-
-            var div = document.createElement('div');
-            div.className = 'blocklist-for-gsr-buttons';
-            div.appendChild(btnUrl);
-            div.appendChild(btnDomain);
-
-            return div;
-        }
-
-        var btnUrl = ij.addButton(
-            'URL をブロック',
-            'ab_button blocklist-for-gsr-button'
-        );
-        btnUrl.style.marginRight = '5px';
-        btnUrl.setAttribute('data-url', url);
-        btnUrl.setAttribute('data-type', 'blocked-url');
-
-        var btnDomain = this.addButton(
-            'ドメインをブロック',
-            'ab_button blocklist-for-gsr-button'
-        );
-        btnDomain.style.marginRight = '5px';
-        btnDomain.setAttribute('data-url', url);
-        btnDomain.setAttribute('data-type', 'blocked-domain');
-
-        var div = document.createElement('div');
-        div.className = 'blocklist-for-gsr-buttons';
-        div.appendChild(btnUrl);
-        div.appendChild(btnDomain);
-
-        return div;
-    };
-
     ij.hideLineMatchBlocklist = function() {
         if (!this._blocklist) {
             return;
@@ -376,6 +289,59 @@ Blocklist.inject = {};
         }
     };
 
+    ij.addButton = function(name, className) {
+        var button = document.createElement('input');
+        button.type = 'button';
+        button.value = name;
+        button.className = className;
+        return button;
+    };
+
+    ij.getRowActionButtons = function(blocked, url) {
+        if (blocked) {
+            //var btnUrl = ij.addButton(
+            //    'URL ブロックを解除',
+            //    'ab_button blocklist-for-gsr-button'
+            //);
+            //btnUrl.style.marginRight = '5px';
+            //btnUrl.setAttribute('data-url', url);
+            //btnUrl.setAttribute('data-type', 'unblocked-url');
+            //var btnDomain = this.addButton(
+            //    'ドメインブロックを解除',
+            //    'ab_button blocklist-for-gsr-button'
+            //);
+            //btnDomain.style.marginRight = '5px';
+            //btnDomain.setAttribute('data-url', url);
+            //btnDomain.setAttribute('data-type', 'unblocked-domain');
+            //var div = document.createElement('div');
+            //div.className = 'blocklist-for-gsr-buttons';
+            //div.appendChild(btnUrl);
+            //div.appendChild(btnDomain);
+            //return div;
+            return document.createElement('div');
+        }
+
+        var div = document.createElement('div');
+        div.className = 'blocklist-for-gsr-buttons';
+        var btnUrl = ij.addButton(
+            'URL をブロック',
+            'ab_button blocklist-for-gsr-button'
+        );
+        btnUrl.style.marginRight = '5px';
+        btnUrl.setAttribute('data-url', url);
+        btnUrl.setAttribute('data-type', 'blocked-url');
+        div.appendChild(btnUrl);
+        //var btnDomain = this.addButton(
+        //    'ドメインをブロック',
+        //    'ab_button blocklist-for-gsr-button'
+        //);
+        //btnDomain.style.marginRight = '5px';
+        //btnDomain.setAttribute('data-url', url);
+        //btnDomain.setAttribute('data-type', 'blocked-domain');
+        //div.appendChild(btnDomain);
+        return div;
+    };
+
     ij.initGsrp = function() {
         var elements = document.querySelectorAll('.' + ij.BLOCKED_NAME);
         var len = elements.length;
@@ -388,7 +354,8 @@ Blocklist.inject = {};
 
     ij.execute = function() {
         this.sendRequest(
-            { type: Blocklist.type.GET_GSRP_MODE },
+            Blocklist.type.GET_GSRP_MODE,
+            null,
             this.callbackResponse
         );
         this.refreshBlocklist();
@@ -410,13 +377,23 @@ Blocklist.inject = {};
         ij.addMark();
         Blocklist.logger.info('INJECTED');
         ij.execute();
-        ij.timerId = window.setInterval(function() {
-            ij.execute();
-        }, ij.INTERVAL);
+        ij.setInterval(ij.INTERVAL);
     };
 
     ij.end = function() {
-        window.clearInterval(ij.timerId);
+        ij.clearInterval(ij.timerId);
+    };
+
+    ij.setInterval = function(time) {
+        Blocklist.logger.info('Set interval', time, 'sec.');
+        ij.timerId = window.setInterval(function() {
+            ij.execute();
+        }, time);
+    };
+
+    ij.clearInterval = function(timerId) {
+        Blocklist.logger.info('Clear interval', timerId);
+        window.clearInterval(timerId);
     };
 
     ij.countUp = function() {
@@ -424,13 +401,19 @@ Blocklist.inject = {};
     };
 
     ij.tempFunction = function() {
-        console.log('click row');
+        Blocklist.logger.info('Click block/unblock button');
         var type = this.getAttribute('data-type');
         var url = this.getAttribute('data-url');
         if (0 === type.indexOf('unblocked')) {
-            ij.sendRequestPostUnblockUrl(url);
+            ij.sendRequest(
+                Blocklist.type.SEND_UNBLOCK_URL,
+                { url: url }
+            );
         } else {
-            ij.sendRequestPostBlockUrl(url);
+            ij.sendRequest(
+                Blocklist.type.SEND_BLOCK_URL,
+                { url: url }
+            );
         }
     };
 
