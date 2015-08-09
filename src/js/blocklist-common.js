@@ -22,11 +22,13 @@ Blocklist.regex.AFTER_SCHEME = new RegExp('^https?:\/\/(.*)');
 
 // ----
 
-Blocklist.sendType = {};
-Blocklist.sendType.GET_BLOCKLIST  = 'GET_BLOCKLIST';
-Blocklist.sendType.SEND_BLOCKLIST = 'SEND_BLOCKLIST';
-Blocklist.sendType.GET_GSRP_MODE  = 'GET_MODE';
-Blocklist.sendType.SEND_GSRP_MODE = 'SEND_MODE';
+Blocklist.type = {};
+Blocklist.type.GET_BLOCKLIST  = 'GET_BLOCKLIST';
+Blocklist.type.SEND_BLOCKLIST = 'SEND_BLOCKLIST';
+Blocklist.type.GET_GSRP_MODE  = 'GET_MODE';
+Blocklist.type.SEND_GSRP_MODE = 'SEND_MODE';
+Blocklist.type.GET_BLOCK_URL  = 'GET_BLOCK_URL';
+Blocklist.type.SEND_BLOCK_URL = 'SEND_BLOCK_URL';
 
 // ----
 

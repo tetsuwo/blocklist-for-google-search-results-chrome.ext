@@ -35,17 +35,24 @@ Blocklist.bg = {};
         chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
             console.log('bg.runtime.onMessage', request);
             switch (request.type) {
-                case Blocklist.sendType.GET_BLOCKLIST:
+                case Blocklist.type.GET_BLOCKLIST:
                     sendMessage({
-                        type: Blocklist.sendType.SEND_BLOCKLIST,
+                        type: Blocklist.type.SEND_BLOCKLIST,
                         blocklist: db.get('regexp_blocklist')
                     });
                     break;
 
-                case Blocklist.sendType.GET_GSRP_MODE:
+                case Blocklist.type.GET_GSRP_MODE:
                     sendMessage({
-                        type: Blocklist.sendType.SEND_GSRP_MODE,
+                        type: Blocklist.type.SEND_GSRP_MODE,
                         gsrpMode: db.get('gsrp_mode')
+                    });
+                    break;
+
+                case Blocklist.type.SEND_BLOCK_URL:
+                    sendMessage({
+                        type: Blocklist.type.GET_BLOCK_URL,
+                        data: null
                     });
                     break;
 

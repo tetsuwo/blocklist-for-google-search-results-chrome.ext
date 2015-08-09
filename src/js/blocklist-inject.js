@@ -64,13 +64,82 @@ Blocklist.inject = {};
 
     // ----
 
+    ij.listenMessage = function() {
+        var that = ij;
+        chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
+            Blocklist.logger.info('chrome.runtime.onMessage', request);
+            switch (request.type) {
+                case Blocklist.type.SEND_BLOCKLIST:
+                    that._blocklist = request.blocklist;
+                    break;
+
+                default:
+                    break;
+            }
+        });
+    };
+
+    ij.sendRequest = function(type, data) {
+        chrome.runtime.sendMessage(
+            {
+                type: type,
+                data: data
+            },
+            ij.callbackResponse
+        );
+    };
+
+    ij.sendRequestPostBlockUrl = function(url) {
+        this.sendRequest(
+            {
+                type: Blocklist.type.POST_BLOCK_URL,
+                data: {
+                    url: url
+                }
+            },
+            this.callbackResponse
+        );
+    };
+
+    ij.sendRequestPostUnlockUrl = function() {
+        this.sendRequest(
+            {
+                type: Blocklist.type.POST_UNBLOCK_URL,
+                data: {
+                    url: url
+                }
+            },
+            this.callbackResponse
+        );
+    };
+
+    ij.callbackResponse = function(response) {
+        Blocklist.logger.info(response.type, response);
+        switch (response.type) {
+            case Blocklist.type.GET_GSRP_MODE:
+                ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
+                ij.GSRP_MODE = response.gsrpMode;
+                break;
+
+            case Blocklist.type.GET_GSRP_MODE:
+                ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
+                ij.GSRP_MODE = response.gsrpMode;
+                break;
+        }
+    };
+
+    ij.callbackGsrpMode = function(response) {
+        ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
+        ij.GSRP_MODE = response.gsrpMode;
+    };
+
     /**
      * Callback of a get blocklist
      * @param {Object} response
      */
     ij.callbackGetBlocklist = function(response) {
         switch (response.type) {
-            case Blocklist.sendType.SEND_BLOCKLIST:
+            case Blocklist.type.SEND_BLOCKLIST:
                 ij._blocklist = response.blocklist;
                 var list = response.blocklist, compiled = [];
                 for (var i = 0, len = list.length; i < len; i++) {
@@ -85,15 +154,6 @@ Blocklist.inject = {};
         }
     };
 
-    ij.callbackGsrpMode = function(response) {
-        this.GSRP_MODE_CHANGED = this.GSRP_MODE !== response.gsrpMode;
-        this.GSRP_MODE = response.gsrpMode;
-    };
-
-    ij.getCompiledBlocklist = function() {
-        return this._compiled_blocklist;
-    };
-
     /**
      * After refresh for blocklist
      */
@@ -104,7 +164,7 @@ Blocklist.inject = {};
     ij.refreshBlocklist = function() {
         var that = ij;
         chrome.runtime.sendMessage(
-            { type: Blocklist.sendType.GET_BLOCKLIST },
+            { type: Blocklist.type.GET_BLOCKLIST },
             function(response) {
                 that.callbackGetBlocklist(response);
                 that.refreshBlocklistAfter();
@@ -112,11 +172,8 @@ Blocklist.inject = {};
         );
     };
 
-    ij.sendRequestGsrpMode = function() {
-        chrome.runtime.sendMessage(
-            { type: Blocklist.sendType.GET_GSRP_MODE },
-            this.callbackGsrpMode
-        );
+    ij.getCompiledBlocklist = function() {
+        return this._compiled_blocklist;
     };
 
     /**
@@ -183,7 +240,9 @@ Blocklist.inject = {};
                 targetUrl = Blocklist.common.getAfterScheme(url);
             }
             //Blocklist.logger.debug(url, targetUrl);
+            var blocked = false;
             if (ij.isBlocked(targetUrl)) {
+                blocked = true;
                 line.style.backgroundColor = '#dddddd';
                 line.style.padding = '10px';
                 if (line.className.indexOf(ij.BLOCKED_NAME) === -1) {
@@ -202,7 +261,7 @@ Blocklist.inject = {};
 
             var elements = line.querySelectorAll('.blocklist-for-gsr-buttons');
             if (elements.length === 0) {
-                line.appendChild(this.getRowActionButtons(targetUrl));
+                line.appendChild(this.getRowActionButtons(blocked, targetUrl));
             }
         }
     };
@@ -215,7 +274,32 @@ Blocklist.inject = {};
         return button;
     };
 
-    ij.getRowActionButtons = function(url) {
+    ij.getRowActionButtons = function(blocked, url) {
+        if (blocked) {
+            var btnUrl = ij.addButton(
+                'URL ブロックを解除',
+                'ab_button blocklist-for-gsr-button'
+            );
+            btnUrl.style.marginRight = '5px';
+            btnUrl.setAttribute('data-url', url);
+            btnUrl.setAttribute('data-type', 'unblocked-url');
+
+            var btnDomain = this.addButton(
+                'ドメインブロックを解除',
+                'ab_button blocklist-for-gsr-button'
+            );
+            btnDomain.style.marginRight = '5px';
+            btnDomain.setAttribute('data-url', url);
+            btnDomain.setAttribute('data-type', 'unblocked-domain');
+
+            var div = document.createElement('div');
+            div.className = 'blocklist-for-gsr-buttons';
+            div.appendChild(btnUrl);
+            div.appendChild(btnDomain);
+
+            return div;
+        }
+
         var btnUrl = ij.addButton(
             'URL をブロック',
             'ab_button blocklist-for-gsr-button'
@@ -271,7 +355,9 @@ Blocklist.inject = {};
                 targetUrl = Blocklist.common.getAfterScheme(url);
             }
             //Blocklist.logger.debug(url, targetUrl);
+            var blocked = false;
             if (ij.isBlocked(targetUrl)) {
+                blocked = true;
                 line.style.display = 'none';
                 if (line.className.indexOf(ij.BLOCKED_NAME) === -1) {
                     line.className = line.className + ' ' + ij.BLOCKED_NAME;
@@ -285,7 +371,7 @@ Blocklist.inject = {};
 
             var elements = line.querySelectorAll('.blocklist-for-gsr-buttons');
             if (elements.length === 0) {
-                line.appendChild(this.getRowActionButtons(targetUrl));
+                line.appendChild(this.getRowActionButtons(blocked, targetUrl));
             }
         }
     };
@@ -301,7 +387,10 @@ Blocklist.inject = {};
     };
 
     ij.execute = function() {
-        this.sendRequestGsrpMode();
+        this.sendRequest(
+            { type: Blocklist.type.GET_GSRP_MODE },
+            this.callbackResponse
+        );
         this.refreshBlocklist();
     };
 
@@ -338,11 +427,16 @@ Blocklist.inject = {};
         console.log('click row');
         var type = this.getAttribute('data-type');
         var url = this.getAttribute('data-url');
-        console.log(type, url);
+        if (0 === type.indexOf('unblocked')) {
+            ij.sendRequestPostUnblockUrl(url);
+        } else {
+            ij.sendRequestPostBlockUrl(url);
+        }
     };
 
     ij.handleLine = function(mode) {
         Blocklist.logger.time('Handled Line');
+        Blocklist.logger.log('Handled Line - Mode', mode);
         this.countUp();
         Blocklist.logger.info('COUNTER', this.COUNTER);
         if (this.COUNTER % 10 === 0) {
@@ -362,21 +456,6 @@ Blocklist.inject = {};
             }
         }
         Blocklist.logger.timeEnd('Handled Line');
-    };
-
-    ij.listenMessage = function() {
-        var that = ij;
-        chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
-            Blocklist.logger.info('chrome.runtime.onMessage', request);
-            switch (request.type) {
-                case Blocklist.sendType.SEND_BLOCKLIST:
-                    that._blocklist = request.blocklist;
-                    break;
-
-                default:
-                    break;
-            }
-        });
     };
 
 })(Blocklist.inject);
