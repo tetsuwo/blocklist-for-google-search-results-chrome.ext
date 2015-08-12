@@ -331,14 +331,14 @@ Blocklist.inject = {};
         btnUrl.setAttribute('data-url', url);
         btnUrl.setAttribute('data-type', 'blocked-url');
         div.appendChild(btnUrl);
-        //var btnDomain = this.addButton(
-        //    'ドメインをブロック',
-        //    'ab_button blocklist-for-gsr-button'
-        //);
-        //btnDomain.style.marginRight = '5px';
-        //btnDomain.setAttribute('data-url', url);
-        //btnDomain.setAttribute('data-type', 'blocked-domain');
-        //div.appendChild(btnDomain);
+        var btnDomain = this.addButton(
+            'ドメインをブロック',
+            'ab_button blocklist-for-gsr-button'
+        );
+        btnDomain.style.marginRight = '5px';
+        btnDomain.setAttribute('data-url', url);
+        btnDomain.setAttribute('data-type', 'blocked-domain');
+        div.appendChild(btnDomain);
         return div;
     };
 
@@ -400,19 +400,35 @@ Blocklist.inject = {};
         this.COUNTER++;
     };
 
-    ij.tempFunction = function() {
+    ij.onClickCallback = function() {
         Blocklist.logger.info('Click block/unblock button');
         var type = this.getAttribute('data-type');
         var url = this.getAttribute('data-url');
         if (0 === type.indexOf('unblocked')) {
-            ij.sendRequest(
-                Blocklist.type.SEND_UNBLOCK_URL,
-                { url: url }
-            );
+            //ij.sendRequest(
+            //    Blocklist.type.SEND_UNBLOCK_URL,
+            //    { url: url }
+            //);
         } else {
+            var target = '';
+            switch (type) {
+                case 'blocked-url':
+                    target = url;
+                    break;
+                case 'blocked-domain':
+                    target = url;
+                    var idx = url.indexOf('/');
+                    if (-1 < idx) {
+                        target = url.substr(0, idx);
+                    }
+                    Blocklist.logger.info(type, url, target);
+                    break;
+                default:
+                    return false;
+            }
             ij.sendRequest(
                 Blocklist.type.SEND_BLOCK_URL,
-                { url: url }
+                { url: target }
             );
         }
     };
@@ -434,8 +450,8 @@ Blocklist.inject = {};
         var elements = document.querySelectorAll('.blocklist-for-gsr-button');
         if (0 < elements.length) {
             for (var i = 0; i < elements.length; i++) {
-                elements[i].removeEventListener('click', ij.tempFunction);
-                elements[i].addEventListener('click', ij.tempFunction);
+                elements[i].removeEventListener('click', ij.onClickCallback);
+                elements[i].addEventListener('click', ij.onClickCallback);
             }
         }
         Blocklist.logger.timeEnd('Handled Line');
