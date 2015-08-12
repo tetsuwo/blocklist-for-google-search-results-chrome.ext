@@ -4,6 +4,7 @@ CHANGE LOG:
 - 0.0.3
   - refactoring
   - supported dynamic url block
+  - supported dynamic domain block
 
 - 0.0.2
   - fixed bug situation of a part.
