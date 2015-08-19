@@ -35,6 +35,9 @@
         },
 
         get: function(k, defaultValue) {
+            if (localStorage.getItem(this.key(k)) === 'undefined') {
+                return undefined;
+            }
             var v = JSON.parse(localStorage.getItem(this.key(k)));
             this.log('[get] key = %s', k);
             this.log('[get] val = %s', v);

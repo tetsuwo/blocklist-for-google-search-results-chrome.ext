@@ -35,22 +35,22 @@ Blocklist.utils.fetchAfterSchemeDomains = function() {
     return db.get('after_scheme_domains');
 };
 
-Blocklist.utils.buildBlocklist = function(raw_blocklist) {
+Blocklist.utils.buildBlocklist = function(raw_blocklist, after_scheme_domains) {
     var blocklist_urls = Blocklist.utils.convertArray(raw_blocklist);
-    db.set('raw_blocklist', raw_blocklist);
-    db.set('blocklist',
-        Blocklist.utils.getBlocklist(
-            blocklist_urls,
-            Blocklist.utils.fetchAfterSchemeDomains()
-        )
+    var blocklist = Blocklist.utils.getBlocklist(
+        blocklist_urls,
+        after_scheme_domains
     );
-    var list = db.get('blocklist'), regexp_blocklist = [];
-    for (var i = 0, len = list.length; i < len; i++) {
-        var url = list[i];
+    var regexp_blocklist = [];
+    for (var i = 0, len = blocklist.length; i < len; i++) {
+        var url = blocklist[i];
         var replacedUrl = '^' + url.replace(/([.*+?^=!:${}()|[\]\/\\])/g, "\\$1");
         regexp_blocklist.push(replacedUrl);
     }
-    db.set('regexp_blocklist', regexp_blocklist);
-    //console.log('regexp_blocklist', regexp_blocklist);
+    return {
+        rawBlocklist: raw_blocklist,
+        blocklist: blocklist,
+        regexpBlocklist: regexp_blocklist
+    };
 };
 

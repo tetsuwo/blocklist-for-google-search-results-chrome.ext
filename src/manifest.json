@@ -16,10 +16,11 @@
     "128": "images/icon512.png"
   },
   "permissions": [
+    "clipboardWrite",
     "tabs",
     "*://*/*"
   ],
-  "version": "0.0.3.1",
+  "version": "0.0.3.2",
   "manifest_version": 2,
   "content_security_policy":
     "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com; object-src 'self'"

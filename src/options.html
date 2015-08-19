@@ -19,13 +19,16 @@
             </header>
             <section class="clearfix">
                 <p>
-                    下記のテキストエリアに <b>http://www.example.com/hoge/</b> と入力して適用すると URL のドメイン（<b>www.example.com</b>）だけがブロックリストとして登録され、 Google 検索結果で www.example.com と<b>完全に一致</b>した場合に一致した検索結果行を非表示にします。
+                    下記のテキストエリアに <b>http://www.example.com/hoge/</b> と入力して適用すると 
+                    URL のドメイン（<b>www.example.com</b>）だけがブロックリストとして登録され、 
+                    Google 検索結果で www.example.com と<b>完全に一致</b>した場合に一致した検索結果行を非表示にします。
                 </p>
                 <textarea id="blocklist"></textarea>
                 <button id="apply">適用</button>
                 <!--<button id="block">現在表示中の「<span id="current-host"></span>」をブロック</button>-->
                 <button id="open-optimized-blocklist">最適化後のブロックリストを表示</button>
                 <textarea id="optimized-blocklist" style="display:none;"></textarea>
+                <span class="display-message"></span>
             </section>
             <hr>
             <header>
@@ -37,6 +40,7 @@
                 </p>
                 <textarea id="after-scheme-domains"></textarea>
                 <button id="apply-after-scheme-domains">適用</button>
+                <span class="display-message"></span>
             </section>
             <footer class="clearfix">
                 <div class="clearfix">
