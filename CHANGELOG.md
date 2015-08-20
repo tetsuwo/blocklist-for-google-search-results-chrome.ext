@@ -5,6 +5,8 @@ CHANGE LOG:
   - refactoring
   - supported dynamic url block
   - supported dynamic domain block
+  - performance up (supported worker)
+  - fixed bug
 
 - 0.0.2
   - fixed bug situation of a part.
