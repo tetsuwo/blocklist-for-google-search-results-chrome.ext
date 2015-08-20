@@ -72,7 +72,10 @@ Blocklist.bg = {};
                 case Blocklist.type.SEND_BLOCK_URL:
                     var raw_blocklist = db.get('raw_blocklist');
                     raw_blocklist = request.data.url + '\n' + raw_blocklist;
-                    Blocklist.utils.buildBlocklist(raw_blocklist);
+                    var blocklists = Blocklist.utils.buildBlocklist(raw_blocklist);
+                    db.set('raw_blocklist', blocklists.rawBlocklist);
+                    db.set('blocklist', blocklists.blocklist);
+                    db.set('regexp_blocklist', blocklists.regexpBlocklist);
                     sendMessage({
                         type: Blocklist.type.GET_BLOCK_URL,
                         receiveType: request.type,
