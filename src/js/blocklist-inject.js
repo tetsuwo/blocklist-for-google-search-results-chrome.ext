@@ -57,7 +57,7 @@ Blocklist.inject = {};
      * @type {Number}
      */
     //ij.SELECTOR_SEARCH_RESULT = 'ol .g:not(.blocklist-for-gsr-blocked)';
-    ij.SELECTOR_SEARCH_RESULT = 'ol .g';
+    ij.SELECTOR_SEARCH_RESULT = '.srg .g';
     ij.SELECTOR_SEARCH_RESULT_URL = '.r a';
 
     // ----
