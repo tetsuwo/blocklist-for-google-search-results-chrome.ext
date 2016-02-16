@@ -7,6 +7,7 @@ CHANGE LOG:
   - supported dynamic domain block
   - performance up (supported worker)
   - fixed bug
+  - following newest SERP
 
 - 0.0.2
   - fixed bug situation of a part.
