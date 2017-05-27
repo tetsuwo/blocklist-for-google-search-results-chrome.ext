@@ -54,3 +54,36 @@ Blocklist.utils.buildBlocklist = function(raw_blocklist, after_scheme_domains) {
     };
 };
 
+Blocklist.utils.detectDomain = function(url) {
+    if (!url) {
+        return null;
+    }
+
+    if (url.match(/^[a-z].+\:\/\//)) {
+        var idx = url.indexOf('://');
+        if (-1 < idx) {
+            url =  url.substr(idx + 3);
+        }
+    }
+
+    var idx = url.indexOf('/');
+    if (-1 < idx) {
+        return url.substr(0, idx);
+    }
+
+    return null;
+};
+
+Blocklist.utils.saveBlocklist = function(url) {
+    if (!window.db) {
+        throw 'Could not connect database.';
+    }
+
+    var raw_blocklist = db.get('raw_blocklist');
+    raw_blocklist = url + '\n' + raw_blocklist;
+
+    var blocklists = Blocklist.utils.buildBlocklist(raw_blocklist);
+    db.set('raw_blocklist', blocklists.rawBlocklist);
+    db.set('blocklist', blocklists.blocklist);
+    db.set('regexp_blocklist', blocklists.regexpBlocklist);
+};

@@ -6,3 +6,5 @@
 
 Blocklist.bg.listenTabs();
 Blocklist.bg.listenMessage();
+Blocklist.bg.createContextMenus();
+Blocklist.bg.init();

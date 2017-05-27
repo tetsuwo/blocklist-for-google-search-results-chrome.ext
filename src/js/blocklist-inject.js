@@ -402,33 +402,20 @@ Blocklist.inject = {};
 
     ij.onClickCallback = function() {
         Blocklist.logger.info('Click block/unblock button');
-        var type = this.getAttribute('data-type');
-        var url = this.getAttribute('data-url');
-        if (0 === type.indexOf('unblocked')) {
+
+        var blockType = this.getAttribute('data-type');
+        var blockUrl = this.getAttribute('data-url');
+        Blocklist.logger.info(blockType, blockUrl);
+
+        if (0 === blockType.indexOf('unblocked')) {
             //ij.sendRequest(
             //    Blocklist.type.SEND_UNBLOCK_URL,
             //    { url: url }
             //);
         } else {
-            var target = '';
-            switch (type) {
-                case 'blocked-url':
-                    target = url;
-                    break;
-                case 'blocked-domain':
-                    target = url;
-                    var idx = url.indexOf('/');
-                    if (-1 < idx) {
-                        target = url.substr(0, idx);
-                    }
-                    Blocklist.logger.info(type, url, target);
-                    break;
-                default:
-                    return false;
-            }
             ij.sendRequest(
                 Blocklist.type.SEND_BLOCK_URL,
-                { url: target }
+                { blockUrl: blockUrl, blockType: blockType }
             );
         }
     };

@@ -1,6 +1,11 @@
 CHANGE LOG:
 -----------
 
+- 1.0.0
+  - refactoring
+  - supported block via context menu
+  - fixed bug
+
 - 0.0.3
   - refactoring
   - supported dynamic url block
