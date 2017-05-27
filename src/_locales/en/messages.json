@@ -7,5 +7,14 @@
   },
   "ext_description": {
     "message": "URL in Blocklist will remove from your Google search results."
+  },
+  "add_domain_with_context_menu": {
+    "message": "Do you add this page domain in my Block-list?"
+  },
+  "add_url_with_context_menu": {
+    "message": "Do you add this page URL in my Block-list?"
+  },
+  "go_to_options_page": {
+    "message": "Confirm the current Block-list"
   }
 }

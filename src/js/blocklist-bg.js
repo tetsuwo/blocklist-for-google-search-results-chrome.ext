@@ -13,9 +13,15 @@ Blocklist.bg = {};
 
 (function(bg) {
 
+    bg.INITIALIZED = false;
+
     bg.COUNTER = 0;
 
     bg.LOG_CLEAR_INTERVAL = 10;
+
+    bg.init = function() {
+        this.INITIALIZED = true;
+    };
 
     bg.countUp = function() {
         this.COUNTER++;
@@ -70,26 +76,46 @@ Blocklist.bg = {};
                     break;
 
                 case Blocklist.type.SEND_BLOCK_URL:
-                    var raw_blocklist = db.get('raw_blocklist');
-                    raw_blocklist = request.data.url + '\n' + raw_blocklist;
-                    var blocklists = Blocklist.utils.buildBlocklist(raw_blocklist);
-                    db.set('raw_blocklist', blocklists.rawBlocklist);
-                    db.set('blocklist', blocklists.blocklist);
-                    db.set('regexp_blocklist', blocklists.regexpBlocklist);
-                    sendMessage({
-                        type: Blocklist.type.GET_BLOCK_URL,
-                        receiveType: request.type,
-                        data: {
-                            url: url,
-                            blocklist: db.get('regexp_blocklist')
-                        }
-                    });
+                    var targetUrl = null;
+
+                    switch (request.data.blockType) {
+                        case 'blocked-url':
+                            targetUrl = request.data.blockUrl;
+                            break;
+
+                        case 'blocked-domain':
+                            var tmp = Blocklist.utils.detectDomain(request.data.blockUrl);
+                            if (tmp === null) {
+                                targetUrl = request.data.blockUrl;
+                            } else {
+                                targetUrl = tmp;
+                            }
+                            break;
+
+                        default:
+                            return false;
+                    }
+
+                    try {
+                        Blocklist.utils.saveBlocklist(targetUrl);
+                        sendMessage({
+                            type: Blocklist.type.GET_BLOCK_URL,
+                            receiveType: request.type,
+                            data: {
+                                url: targetUrl,
+                                blocklist: db.get('regexp_blocklist')
+                            }
+                        });
+                    } catch (e) {
+                        console.error('FAILED', e);
+                    }
                     break;
 
                 default:
                     console.error('Not found request type (bg.listenMessage)');
                     break;
             }
+
             bg.countUp();
         });
     };
@@ -117,6 +143,79 @@ Blocklist.bg = {};
         } catch (e) {
             console.error('bg.runBlock', e);
         }
+    };
+
+    bg.createContextMenus = function() {
+        if (this.INITIALIZED) {
+            return;
+        }
+
+        var contextMenuId = chrome.contextMenus.create({
+            title: getMessage('ext_name'),
+            type: 'normal',
+            contexts: ['all']
+        });
+
+        chrome.contextMenus.create({
+            title: getMessage('add_domain_with_context_menu'),
+            type: 'normal',
+            contexts: ['all'],
+            parentId: contextMenuId,
+            onclick: function(info) {
+                var url = info.pageUrl;
+                var target = '';
+
+                var tmp = Blocklist.utils.detectDomain(url);
+                if (tmp === null) {
+                    target = url;
+                } else {
+                    target = tmp;
+                }
+
+                if (!window.confirm(target + '\n\nOK?')) {
+                    return;
+                }
+
+                Blocklist.logger.info(url, target);
+
+                try {
+                    Blocklist.utils.saveBlocklist(target);
+                } catch (e) {
+                    console.error('FAILED', e);
+                }
+            }
+        });
+
+        chrome.contextMenus.create({
+            title: getMessage('add_url_with_context_menu'),
+            type: 'normal',
+            contexts: ['all'],
+            parentId: contextMenuId,
+            onclick: function(info) {
+                var url = info.pageUrl;
+                Blocklist.logger.info(url);
+
+                if (!window.confirm(url + '\n\nOK?')) {
+                    return;
+                }
+
+                try {
+                    Blocklist.utils.saveBlocklist(url);
+                } catch (e) {
+                    console.error('FAILED', e);
+                }
+            }
+        });
+
+        chrome.contextMenus.create({
+            title: getMessage('go_to_options_page'),
+            type: 'normal',
+            contexts: ['all'],
+            parentId: contextMenuId,
+            onclick: function() {
+                chrome.runtime.openOptionsPage();
+            }
+        });
     };
 
 })(Blocklist.bg);

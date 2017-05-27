@@ -9,9 +9,12 @@
     "message": "Google 検索結果から指定した URL を除外する拡張機能です。営業リスト作成などにご利用いただけます。"
   },
   "add_domain_with_context_menu": {
-    "message": "このページのドメインを検索結果のブロックリストに追加"
+    "message": "このページのドメインをブロックリストに追加"
   },
   "add_url_with_context_menu": {
-    "message": "このページの URL を検索結果のブロックリストに追加"
+    "message": "このページの URL をブロックリストに追加"
+  },
+  "go_to_options_page": {
+    "message": "現在のブロックリストを確認"
   }
 }
