@@ -19,6 +19,10 @@ Blocklist.bg = {};
 
     bg.LOG_CLEAR_INTERVAL = 10;
 
+    bg.storage = {
+        parsedUrl: {}
+    };
+
     bg.init = function() {
         this.INITIALIZED = true;
     };
@@ -56,7 +60,81 @@ Blocklist.bg = {};
         chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
             bg.handleClearLog();
             console.log('bg.runtime.onMessage', request);
+
             switch (request.type) {
+                case Blocklist.type.REQUEST_PARSE_URL:
+                    var targetUrl = request.data.url;
+
+                    fetch(targetUrl).then(function(response) {
+                        return response.text();
+                    }).then(function(text) {
+                        var imageUrls = [];
+
+                        var imageTags = text.match(/<img[^>]+>/g);
+                        if (!imageTags || !imageTags.length) {
+                            return;
+                        }
+
+                        imageTags.forEach(function(imageTag) {
+                            var matches = imageTag.match(/src=["|'](.*?)["|']/);
+                            if (matches && matches[1]) {
+                                var imageUrl = matches[1];
+
+                                if (imageUrl.charAt(0) === '/' && imageUrl.charAt(1) !== '/') {
+                                    var homeUrl = Blocklist.common.getHomeUrl(targetUrl);
+                                    if (homeUrl.slice(-1) === '/') {
+                                        imageUrl = homeUrl + imageUrl;
+                                    } else {
+                                        imageUrl = homeUrl + '/' + imageUrl;
+                                    }
+                                } else if (imageUrl.charAt(0) === '.' && imageUrl.charAt(1) !== '/') {
+                                    imageUrl = targetUrl + imageUrl;
+                                }
+
+                                imageUrls.push(imageUrl);
+                            }
+                        });
+
+                        imageUrls = imageUrls.filter(Blocklist.common.onlyUnique);
+
+                        if (!bg.storage.parsedUrl[targetUrl]) {
+                            bg.storage.parsedUrl[targetUrl] = {};
+                        }
+
+                        Blocklist.logger.log(
+                            'fetched',
+                            targetUrl,
+                            imageUrls
+                        );
+
+                        var tmp = bg.storage.parsedUrl[targetUrl];
+                        tmp.status = 'parsed';
+                        tmp.lineId = request.data.lineId;
+                        tmp.url = targetUrl;
+                        tmp.imageUrls = imageUrls;
+                    });
+
+                    sendMessage({
+                        type: Blocklist.type.REQUESTED_PARSE_URL,
+                        receiveType: request.type,
+                        data: {
+                            lineId: request.data.lineId,
+                            url: targetUrl
+                        }
+                    });
+
+                    break;
+
+                case Blocklist.type.GET_PARSED_URL_LIST:
+                    sendMessage({
+                        type: Blocklist.type.SEND_PARSED_URL_LIST,
+                        receiveType: request.type,
+                        data: {
+                            urlList: bg.storage.parsedUrl
+                        }
+                    });
+                    break;
+
                 case Blocklist.type.GET_BLOCKLIST:
                     sendMessage({
                         type: Blocklist.type.SEND_BLOCKLIST,
