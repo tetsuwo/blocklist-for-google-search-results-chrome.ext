@@ -80,6 +80,7 @@ Blocklist.bg = {};
                             if (matches && matches[1]) {
                                 var imageUrl = matches[1];
 
+                                // 画像 URL が絶対パス
                                 if (imageUrl.charAt(0) === '/' && imageUrl.charAt(1) !== '/') {
                                     var homeUrl = Blocklist.common.getHomeUrl(targetUrl);
                                     if (homeUrl.slice(-1) === '/') {
@@ -87,8 +88,18 @@ Blocklist.bg = {};
                                     } else {
                                         imageUrl = homeUrl + '/' + imageUrl;
                                     }
-                                } else if (imageUrl.charAt(0) === '.' && imageUrl.charAt(1) !== '/') {
-                                    imageUrl = targetUrl + imageUrl;
+                                }
+                                // 画像 URL が相対パス
+                                else if (imageUrl.charAt(0) === '.') {
+                                    var baseUrl = targetUrl;
+                                    if (10 < targetUrl.lastIndexOf('/')) {
+                                        baseUrl = targetUrl.slice(0, targetUrl.lastIndexOf('/') + 1);
+                                    }
+                                    if (imageUrl.slice(-1) === '/') {
+                                        imageUrl = baseUrl + imageUrl;
+                                    } else {
+                                        imageUrl = baseUrl + imageUrl;
+                                    }
                                 }
 
                                 imageUrls.push(imageUrl);

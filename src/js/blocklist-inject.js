@@ -46,7 +46,8 @@ Blocklist.inject = {};
      * Interval
      * @type {Number}
      */
-    ij.INTERVAL = 10000;
+    ij.INTERVAL = 3000;
+    ij.LITE_INTERVAL = 3000;
 
     /**
      * GSRP Mode
@@ -100,6 +101,7 @@ Blocklist.inject = {};
             case Blocklist.type.SEND_GSRP_MODE:
                 ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
                 ij.GSRP_MODE = response.gsrpMode;
+
                 break;
 
             case Blocklist.type.REQUESTED_PARSE_URL:
@@ -111,22 +113,29 @@ Blocklist.inject = {};
                         status: 'requested'
                     };
                 }
+
                 break;
 
             case Blocklist.type.SEND_PARSED_URL_LIST:
                 ij._parsedUrl = response.data.urlList;
+
                 break;
 
             case Blocklist.type.SEND_BLOCKLIST:
             case Blocklist.type.GET_BLOCK_URL:
                 ij._blocklist = response.data.blocklist;
-                var list = response.data.blocklist, compiled = [];
+
+                var list = response.data.blocklist || [];
+                var compiled = [];
+
                 for (var i = 0, len = list.length; i < len; i++) {
                     var url = list[i];
                     compiled.push(new RegExp(url));
                 }
+
                 ij._compiled_blocklist = compiled;
                 ij.refreshBlocklistAfter();
+
                 break;
 
             default:
@@ -199,10 +208,6 @@ Blocklist.inject = {};
      * @return void
      */
     ij.showLineMatchBlocklist = function() {
-        if (!ij._blocklist) {
-            return;
-        }
-
         var results = this.fetchSearchResults();
         if (!results || !results.length) {
             return;
@@ -280,7 +285,7 @@ Blocklist.inject = {};
                     return;
                 }
 
-                if (!parsedUrl.imageUrls || !parsedUrl.imageUrls.length) {
+                if (!('imageUrls' in parsedUrl) || !parsedUrl.imageUrls.length) {
                     return;
                 }
 
@@ -291,26 +296,31 @@ Blocklist.inject = {};
 
                 var imageWrapper = document.createElement('div');
                 imageWrapper.className = 'blocklist-for-gsr-images';
+                imageWrapper.setAttribute('style', 'line-height:0;');
 
                 var imageStyles = [];
-                imageStyles.push('display: inline-block;');
-                imageStyles.push('background-color: #ccc;');
-                imageStyles.push('background-position: center center;');
-                imageStyles.push('background-repeat: no-repeat;');
-                imageStyles.push('margin: 2px;');
-                imageStyles.push('width: 50px;');
-                imageStyles.push('height: 50px;');
-                imageStyles.push('border: 1px solid #ccc;');
-                imageStyles.push('background-size: cover;');
+                imageStyles.push('display:inline-block;');
+                imageStyles.push('background-color:#ccc;');
+                imageStyles.push('background-position:center center;');
+                imageStyles.push('background-repeat:no-repeat;');
+                imageStyles.push('margin:5px 5px 0 0;');
+                imageStyles.push('width:50px;');
+                imageStyles.push('height:50px;');
+                imageStyles.push('border:1px solid #ccc;');
+                imageStyles.push('background-size:cover;');
 
                 parsedUrl.imageUrls.forEach(function(imageUrl) {
-                    var image = new Image();
-                    image.src = imageUrl;
-                    image.setAttribute('style', imageStyles.join(''));
-                    image.onClick = function() {
+                    var div = document.createElement('div');
+                    //var image = new Image();
+                    //image.src = imageUrl;
+                    div.setAttribute(
+                        'style',
+                        imageStyles.join('') + 'background-image:url(' + imageUrl + ');'
+                    );
+                    div.onclick = function() {
                         window.open(imageUrl);
                     };
-                    imageWrapper.appendChild(image);
+                    imageWrapper.appendChild(div);
                 });
 
                 line.appendChild(imageWrapper);
@@ -319,10 +329,6 @@ Blocklist.inject = {};
     };
 
     ij.hideLineMatchBlocklist = function() {
-        if (!this._blocklist) {
-            return;
-        }
-
         var results = this.fetchSearchResults();
         if (!results || !results.length) {
             return;
@@ -438,20 +444,29 @@ Blocklist.inject = {};
             var line = elements[i];
             line.className = line.className.replace(regexp, '');
         }
+
+        // TODO
+        // 幅にあわせて画像の表示領域も変更
+        // 右サイドバーのオンオフ
+        // ボタンのオンオフ
+        // 画像サムネイルのオンオフ
     };
 
     ij.execute = function() {
-        this.sendRequest(
+        ij.sendRequest(
             Blocklist.type.GET_GSRP_MODE,
             null,
-            this.callbackResponse
+            ij.callbackResponse
         );
-        this.sendRequest(
+        ij.refreshBlocklist();
+    };
+
+    ij.executeParsedUrl = function() {
+        ij.sendRequest(
             Blocklist.type.GET_PARSED_URL_LIST,
             null,
-            this.callbackResponse
+            ij.callbackResponse
         );
-        this.refreshBlocklist();
     };
 
     ij.addedMark = function() {
@@ -470,22 +485,29 @@ Blocklist.inject = {};
         ij.addMark();
         Blocklist.logger.info('INJECTED');
         ij.execute();
-        ij.setInterval(ij.INTERVAL);
+        ij.setSchedules();
     };
 
     ij.end = function() {
         ij.clearInterval(ij.timerId);
+        ij.clearInterval(ij.liteTimerId);
     };
 
-    ij.setInterval = function(time) {
-        Blocklist.logger.info('Set interval', time, 'sec.');
+    ij.setSchedules = function() {
+        Blocklist.logger.info('Set schedules');
+
         ij.timerId = window.setInterval(function() {
             ij.execute();
-        }, time);
+        }, ij.INTERVAL);
+
+        ij.liteTimerId = window.setInterval(function() {
+            ij.executeParsedUrl();
+        }, ij.LITE_INTERVAL);
     };
 
     ij.clearInterval = function(timerId) {
         Blocklist.logger.info('Clear interval', timerId);
+
         window.clearInterval(timerId);
     };
 
@@ -516,17 +538,22 @@ Blocklist.inject = {};
     ij.handleLine = function(mode) {
         Blocklist.logger.time('Handled Line');
         Blocklist.logger.log('Handled Line - Mode', mode);
+
         this.countUp();
+
         Blocklist.logger.info('COUNTER', this.COUNTER);
+
         if (this.COUNTER % 10 === 0) {
             Blocklist.logger.clear();
             Blocklist.logger.log('Handled Line - CLEAR!');
         }
-        if (mode === 'show') {
-            this.showLineMatchBlocklist();
-        } else {
+
+        if (mode === 'hide') {
             this.hideLineMatchBlocklist();
+        } else {
+            this.showLineMatchBlocklist();
         }
+
         var elements = document.querySelectorAll('.blocklist-for-gsr-button');
         if (0 < elements.length) {
             for (var i = 0; i < elements.length; i++) {
@@ -534,6 +561,7 @@ Blocklist.inject = {};
                 elements[i].addEventListener('click', ij.onClickCallback);
             }
         }
+
         Blocklist.logger.timeEnd('Handled Line');
     };
 
