@@ -56,6 +56,34 @@ Blocklist.bg = {};
         });
     };
 
+    bg.getImageUrl = function(targetUrl, imageUrl) {
+        var newUrl = imageUrl;
+
+        // 画像 URL が絶対パス
+        if (imageUrl.charAt(0) === '/' && imageUrl.charAt(1) !== '/') {
+            var homeUrl = Blocklist.common.getHomeUrl(targetUrl);
+            if (homeUrl.slice(-1) === '/') {
+                newUrl = homeUrl + imageUrl;
+            } else {
+                newUrl = homeUrl + '/' + imageUrl;
+            }
+        }
+        // 画像 URL が相対パス
+        else if (imageUrl.charAt(0) === '.') {
+            var baseUrl = targetUrl;
+            if (10 < targetUrl.lastIndexOf('/')) {
+                baseUrl = targetUrl.slice(0, targetUrl.lastIndexOf('/') + 1);
+            }
+            if (imageUrl.slice(-1) === '/') {
+                newUrl = baseUrl + imageUrl;
+            } else {
+                newUrl = baseUrl + imageUrl;
+            }
+        }
+
+        return newUrl;
+    };
+
     bg.listenMessage = function() {
         chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
             bg.handleClearLog();
@@ -71,40 +99,28 @@ Blocklist.bg = {};
                         var imageUrls = [];
 
                         var imageTags = text.match(/<img[^>]+>/g);
-                        if (!imageTags || !imageTags.length) {
-                            return;
+                        if (imageTags && imageTags.length) {
+                            imageTags.forEach(function(imageTag) {
+                                var matches = imageTag.match(/src=["|'](.*?)["|']/);
+                                if (matches && matches[1]) {
+                                    imageUrls.push(bg.getImageUrl(targetUrl, matches[1]));
+                                }
+                            });
                         }
 
-                        imageTags.forEach(function(imageTag) {
-                            var matches = imageTag.match(/src=["|'](.*?)["|']/);
-                            if (matches && matches[1]) {
-                                var imageUrl = matches[1];
 
-                                // 画像 URL が絶対パス
-                                if (imageUrl.charAt(0) === '/' && imageUrl.charAt(1) !== '/') {
-                                    var homeUrl = Blocklist.common.getHomeUrl(targetUrl);
-                                    if (homeUrl.slice(-1) === '/') {
-                                        imageUrl = homeUrl + imageUrl;
-                                    } else {
-                                        imageUrl = homeUrl + '/' + imageUrl;
-                                    }
+                        var bgImages = text.match(/url\s?\(["|'][^\)["|']]+\)/g);
+                        if (bgImages && bgImages.length) {
+                            bgImages.forEach(function(matches) {
+                                if (matches && matches[1]) {
+                                    imageUrls.push(bg.getImageUrl(targetUrl, matches[1]));
                                 }
-                                // 画像 URL が相対パス
-                                else if (imageUrl.charAt(0) === '.') {
-                                    var baseUrl = targetUrl;
-                                    if (10 < targetUrl.lastIndexOf('/')) {
-                                        baseUrl = targetUrl.slice(0, targetUrl.lastIndexOf('/') + 1);
-                                    }
-                                    if (imageUrl.slice(-1) === '/') {
-                                        imageUrl = baseUrl + imageUrl;
-                                    } else {
-                                        imageUrl = baseUrl + imageUrl;
-                                    }
-                                }
+                            });
+                        }
 
-                                imageUrls.push(imageUrl);
-                            }
-                        });
+                        if (!imageUrls.length) {
+                            return;
+                        }
 
                         imageUrls = imageUrls.filter(Blocklist.common.onlyUnique);
 
