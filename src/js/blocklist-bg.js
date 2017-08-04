@@ -98,18 +98,17 @@ Blocklist.bg = {};
                     }).then(function(text) {
                         var imageUrls = [];
 
-                        var imageTags = text.match(/<img[^>]+>/g);
+                        var imageTags = text.match(/<img[^>]+>/ig);
                         if (imageTags && imageTags.length) {
                             imageTags.forEach(function(imageTag) {
-                                var matches = imageTag.match(/src=["|'](.*?)["|']/);
+                                var matches = imageTag.match(/src=["|'](.*?)["|']/i);
                                 if (matches && matches[1]) {
                                     imageUrls.push(bg.getImageUrl(targetUrl, matches[1]));
                                 }
                             });
                         }
 
-
-                        var bgImages = text.match(/url\s?\(["|'][^\)["|']]+\)/g);
+                        var bgImages = text.match(/url\s?\(["|'][^\)["|']]+\)/ig);
                         if (bgImages && bgImages.length) {
                             bgImages.forEach(function(matches) {
                                 if (matches && matches[1]) {
