@@ -171,12 +171,19 @@ Blocklist.bg = {};
                     });
                     break;
 
-                case Blocklist.type.GET_GSRP_MODE:
+                case Blocklist.type.GET_FLAG_OPTIONS:
+
+                    Blocklist.common.setDefaultOptions();
+
                     sendMessage({
-                        type: Blocklist.type.SEND_GSRP_MODE,
+                        type: Blocklist.type.SEND_FLAG_OPTIONS,
                         receiveType: request.type,
+                        flagGsrThumbnailImageViewer: db.get('flag-gsr-thumbnail-image-viewer'),
+                        flagGsrThumbnailImageViewerOneline: db.get('flag-gsr-thumbnail-image-viewer-oneline'),
+                        flagGsrBlockButtons: db.get('flag-gsr-block-buttons'),
                         gsrpMode: db.get('gsrp_mode')
                     });
+
                     break;
 
                 case Blocklist.type.SEND_BLOCK_URL:

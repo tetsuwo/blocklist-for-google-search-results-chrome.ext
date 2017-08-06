@@ -59,8 +59,14 @@ Page.displaySaved = function() {
 
 // ----
 
+Blocklist.common.setDefaultOptions();
+
 DOM('#blocklist').value = db.get('raw_blocklist');
 DOM('#after-scheme-domains').value = db.get('raw_after_scheme_domains');
+
+DOM('#js-flag-gsr-thumbnail-image-viewer').checked = db.get('flag-gsr-thumbnail-image-viewer') === 1;
+DOM('#js-flag-gsr-thumbnail-image-viewer-oneline').checked = db.get('flag-gsr-thumbnail-image-viewer-oneline') === 1;
+DOM('#js-flag-gsr-block-buttons').checked = db.get('flag-gsr-block-buttons') === 1;
 
 // ----
 
@@ -124,4 +130,10 @@ DOM('#apply-after-scheme-domains').onclick = function(e) {
         blocklist: db.get('raw_blocklist'),
         afterSchemeDomains: Blocklist.utils.fetchAfterSchemeDomains()
     });
+};
+
+DOM('#js-apply-options').onclick = function() {
+    db.set('flag-gsr-thumbnail-image-viewer', DOM('#js-flag-gsr-thumbnail-image-viewer').checked ? 1 : 2);
+    db.set('flag-gsr-thumbnail-image-viewer-oneline', DOM('#js-flag-gsr-thumbnail-image-viewer-oneline').checked ? 1 : 2);
+    db.set('flag-gsr-block-buttons', DOM('#js-flag-gsr-block-buttons').checked ? 1 : 2);
 };

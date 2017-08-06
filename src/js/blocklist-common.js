@@ -26,8 +26,8 @@ Blocklist.regex.AFTER_SCHEME = new RegExp('^https?:\/\/(.*)');
 Blocklist.type = {};
 Blocklist.type.GET_BLOCKLIST  = 'GET_BLOCKLIST';
 Blocklist.type.SEND_BLOCKLIST = 'SEND_BLOCKLIST';
-Blocklist.type.GET_GSRP_MODE  = 'GET_MODE';
-Blocklist.type.SEND_GSRP_MODE = 'SEND_MODE';
+Blocklist.type.GET_FLAG_OPTIONS  = 'GET_FLAG_OPTIONS';
+Blocklist.type.SEND_FLAG_OPTIONS = 'SEND_FLAG_OPTIONS';
 Blocklist.type.GET_BLOCK_URL  = 'GET_BLOCK_URL';
 Blocklist.type.SEND_BLOCK_URL = 'SEND_BLOCK_URL';
 Blocklist.type.REQUEST_PARSE_URL = 'REQUEST_PARSE_URL';
@@ -109,4 +109,18 @@ Blocklist.common.getUrlVars = function(url) {
         vars[hash[0]] = decodeURIComponent(hash[1]);
     }
     return vars;
+};
+
+Blocklist.common.setDefaultOptions = function() {
+    if (db.get('flag-gsr-thumbnail-image-viewer') === null) {
+        db.set('flag-gsr-thumbnail-image-viewer', 1);
+    }
+
+    if (db.get('flag-gsr-thumbnail-image-viewer-oneline') === null) {
+        db.set('flag-gsr-thumbnail-image-viewer-oneline', 2);
+    }
+
+    if (db.get('flag-gsr-block-buttons') === null) {
+        db.set('flag-gsr-block-buttons', 1);
+    }
 };

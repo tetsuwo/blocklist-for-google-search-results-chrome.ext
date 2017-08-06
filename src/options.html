@@ -14,33 +14,66 @@
     </head>
     <body>
         <div id="container" style="width: 600px; height: 100%;">
-            <header>
-                <h1>Google 検索結果に表示しないドメイン・URL リスト</h1>
-            </header>
-            <section class="clearfix">
-                <p>
-                    下記のテキストエリアに <b>http://www.example.com/hoge/</b> と入力して適用すると 
-                    URL のドメイン（<b>www.example.com</b>）だけがブロックリストとして登録され、 
-                    Google 検索結果で www.example.com と<b>完全に一致</b>した場合に一致した検索結果行を非表示にします。
-                </p>
-                <textarea id="blocklist"></textarea>
-                <button id="apply">適用</button>
-                <!--<button id="block">現在表示中の「<span id="current-host"></span>」をブロック</button>-->
-                <button id="open-optimized-blocklist">最適化後のブロックリストを表示</button>
-                <textarea id="optimized-blocklist" style="display:none;"></textarea>
-                <span class="display-message"></span>
+            <section class="p-options-section">
+                <header>
+                    <h1>Google 検索結果に表示しないドメイン・URL リスト</h1>
+                </header>
+                <section class="clearfix">
+                    <p>
+                        下記のテキストエリアに <b>http://www.example.com/hoge/</b> と入力して適用すると
+                        URL のドメイン（<b>www.example.com</b>）だけがブロックリストとして登録され、
+                        Google 検索結果で www.example.com と<b>完全に一致</b>した場合に一致した検索結果行を非表示にします。
+                    </p>
+                    <textarea id="blocklist"></textarea>
+                    <button id="apply">適用</button>
+                    <button id="open-optimized-blocklist">最適化後のブロックリストを表示</button>
+                    <textarea id="optimized-blocklist" style="display:none;"></textarea>
+                    <span class="display-message"></span>
+                </section>
             </section>
-            <hr>
-            <header>
-                <h1>URL 前方一致に切り替えたいドメインリスト</h1>
-            </header>
-            <section class="clearfix">
-                <p>
-                    下記のテキストエリアに <b>ameblo.jp</b> などのドメインを入力して適用すると、Google 検索結果の URL が ameblo.jp と<b>完全に一致</b>した場合に、一致条件をドメイン完全一致ではなく URL 前方一致に変更します。
-                </p>
-                <textarea id="after-scheme-domains"></textarea>
-                <button id="apply-after-scheme-domains">適用</button>
-                <span class="display-message"></span>
+            <section class="p-options-section">
+                <header>
+                    <h1>URL 前方一致に切り替えたいドメインリスト</h1>
+                </header>
+                <section class="clearfix">
+                    <p>
+                        下記のテキストエリアに <b>ameblo.jp</b> などのドメインを入力して適用すると、Google 検索結果の URL が ameblo.jp と<b>完全に一致</b>した場合に、一致条件をドメイン完全一致ではなく URL 前方一致に変更します。
+                    </p>
+                    <textarea id="after-scheme-domains"></textarea>
+                    <button id="apply-after-scheme-domains">適用</button>
+                    <span class="display-message"></span>
+                </section>
+            </section>
+            <section class="p-options-section">
+                <header>
+                    <h1>オプション設定</h1>
+                </header>
+                <section class="clearfix">
+                    <p>
+                        機能のオンオフなど設定を切り替えることができます。
+                    </p>
+                    <div class="p-options-form-area clearfix">
+                        <div>
+                            <label>
+                                <input type="checkbox" id="js-flag-gsr-thumbnail-image-viewer" value="1">
+                                検索結果のサムネイル画像ビューワーを利用する
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="checkbox" id="js-flag-gsr-thumbnail-image-viewer-oneline" value="1">
+                                検索結果のサムネイル画像ビューワーを一列のみ表示する
+                            </label>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="checkbox" id="js-flag-gsr-block-buttons" value="1">
+                                検索結果のブロックボタンを表示する
+                            </label>
+                        </div>
+                    </div>
+                    <button id="js-apply-options">オプション適用</button>
+                </section>
             </section>
             <footer class="clearfix">
                 <div class="clearfix">
