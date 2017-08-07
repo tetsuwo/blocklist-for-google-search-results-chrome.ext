@@ -21,7 +21,7 @@
     "*://*/*",
     "contextMenus"
   ],
-  "version": "1.0.1",
+  "version": "1.0.2",
   "manifest_version": 2,
   "content_security_policy":
     "script-src 'self' 'unsafe-eval' https://ssl.google-analytics.com; object-src 'self'"

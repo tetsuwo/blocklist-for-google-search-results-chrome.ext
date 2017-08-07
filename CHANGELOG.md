@@ -1,6 +1,13 @@
 CHANGE LOG:
 -----------
 
+- 1.0.2
+  - Update thumbnail image viewer
+  - new feature: option settings
+
+- 1.0.1
+  - new feature: thumbnail image viewer
+
 - 1.0.0
   - refactoring
   - supported block via context menu
