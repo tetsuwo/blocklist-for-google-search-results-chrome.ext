@@ -27,11 +27,21 @@ header {
 }
     header h1 {
     	font-size: 14px;
+        margin: 0;
     }
 
 /* PAGEBODY */
 section {
 	padding: .5em 1em;
+}
+
+.p-options-section {
+	padding: 1em;
+    border-bottom: 1px dotted #ddd;
+}
+
+.p-options-form-area {
+	padding: 1em 1em 2em;
 }
 
 #blocklist {

@@ -19,6 +19,10 @@ Blocklist.bg = {};
 
     bg.LOG_CLEAR_INTERVAL = 10;
 
+    bg.storage = {
+        parsedUrl: {}
+    };
+
     bg.init = function() {
         this.INITIALIZED = true;
     };
@@ -52,11 +56,111 @@ Blocklist.bg = {};
         });
     };
 
+    bg.getImageUrl = function(targetUrl, imageUrl) {
+        var newUrl = imageUrl;
+
+        // 画像 URL が絶対パス
+        if (imageUrl.charAt(0) === '/' && imageUrl.charAt(1) !== '/') {
+            var homeUrl = Blocklist.common.getHomeUrl(targetUrl);
+            if (homeUrl.slice(-1) === '/') {
+                newUrl = homeUrl + imageUrl;
+            } else {
+                newUrl = homeUrl + '/' + imageUrl;
+            }
+        }
+        // 画像 URL が相対パス
+        else if (imageUrl.charAt(0) === '.') {
+            var baseUrl = targetUrl;
+            if (10 < targetUrl.lastIndexOf('/')) {
+                baseUrl = targetUrl.slice(0, targetUrl.lastIndexOf('/') + 1);
+            }
+            if (imageUrl.slice(-1) === '/') {
+                newUrl = baseUrl + imageUrl;
+            } else {
+                newUrl = baseUrl + imageUrl;
+            }
+        }
+
+        return newUrl;
+    };
+
     bg.listenMessage = function() {
         chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
             bg.handleClearLog();
             console.log('bg.runtime.onMessage', request);
+
             switch (request.type) {
+                case Blocklist.type.REQUEST_PARSE_URL:
+                    var targetUrl = request.data.url;
+
+                    fetch(targetUrl).then(function(response) {
+                        return response.text();
+                    }).then(function(text) {
+                        var imageUrls = [];
+
+                        var imageTags = text.match(/<img[^>]+>/ig);
+                        if (imageTags && imageTags.length) {
+                            imageTags.forEach(function(imageTag) {
+                                var matches = imageTag.match(/src=["|'](.*?)["|']/i);
+                                if (matches && matches[1]) {
+                                    imageUrls.push(bg.getImageUrl(targetUrl, matches[1]));
+                                }
+                            });
+                        }
+
+                        var bgImages = text.match(/url\s?\(["|'][^\)["|']]+\)/ig);
+                        if (bgImages && bgImages.length) {
+                            bgImages.forEach(function(matches) {
+                                if (matches && matches[1]) {
+                                    imageUrls.push(bg.getImageUrl(targetUrl, matches[1]));
+                                }
+                            });
+                        }
+
+                        if (!imageUrls.length) {
+                            return;
+                        }
+
+                        imageUrls = imageUrls.filter(Blocklist.common.onlyUnique);
+
+                        if (!bg.storage.parsedUrl[targetUrl]) {
+                            bg.storage.parsedUrl[targetUrl] = {};
+                        }
+
+                        Blocklist.logger.log(
+                            'fetched',
+                            targetUrl,
+                            imageUrls
+                        );
+
+                        var tmp = bg.storage.parsedUrl[targetUrl];
+                        tmp.status = 'parsed';
+                        tmp.lineId = request.data.lineId;
+                        tmp.url = targetUrl;
+                        tmp.imageUrls = imageUrls;
+                    });
+
+                    sendMessage({
+                        type: Blocklist.type.REQUESTED_PARSE_URL,
+                        receiveType: request.type,
+                        data: {
+                            lineId: request.data.lineId,
+                            url: targetUrl
+                        }
+                    });
+
+                    break;
+
+                case Blocklist.type.GET_PARSED_URL_LIST:
+                    sendMessage({
+                        type: Blocklist.type.SEND_PARSED_URL_LIST,
+                        receiveType: request.type,
+                        data: {
+                            urlList: bg.storage.parsedUrl
+                        }
+                    });
+                    break;
+
                 case Blocklist.type.GET_BLOCKLIST:
                     sendMessage({
                         type: Blocklist.type.SEND_BLOCKLIST,
@@ -67,12 +171,19 @@ Blocklist.bg = {};
                     });
                     break;
 
-                case Blocklist.type.GET_GSRP_MODE:
+                case Blocklist.type.GET_FLAG_OPTIONS:
+
+                    Blocklist.common.setDefaultOptions();
+
                     sendMessage({
-                        type: Blocklist.type.SEND_GSRP_MODE,
+                        type: Blocklist.type.SEND_FLAG_OPTIONS,
                         receiveType: request.type,
+                        flagGsrThumbnailImageViewer: db.get('flag-gsr-thumbnail-image-viewer'),
+                        flagGsrThumbnailImageViewerOneline: db.get('flag-gsr-thumbnail-image-viewer-oneline'),
+                        flagGsrBlockButtons: db.get('flag-gsr-block-buttons'),
                         gsrpMode: db.get('gsrp_mode')
                     });
+
                     break;
 
                 case Blocklist.type.SEND_BLOCK_URL:

@@ -10,7 +10,11 @@ Blocklist.logger.info('RUN');
 
 // ----
 
-if (!Blocklist.inject.addedMark()) {
-    Blocklist.inject.start();
-    Blocklist.inject.listenMessage();
+try {
+    if (!Blocklist.inject.addedMark()) {
+        Blocklist.inject.start();
+        Blocklist.inject.listenMessage();
+    }
+} catch (e) {
+    Blocklist.logger.error('injection-run.js', e);
 }

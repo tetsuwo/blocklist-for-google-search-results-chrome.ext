@@ -20,7 +20,13 @@ Blocklist.inject = {};
     ij._blocklist = null;
     ij._compiled_blocklist = null;
 
+    ij._parsedUrl = {};
+
     ij.GSRP_MODE_CHANGED = false;
+
+    ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER = 1;
+    ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER_ONELINE = 2;
+    ij.FLAG_GSR_BLOCK_BUTTONS = 1;
 
     /**
      * Blocklist Search Count
@@ -44,7 +50,8 @@ Blocklist.inject = {};
      * Interval
      * @type {Number}
      */
-    ij.INTERVAL = 10000;
+    ij.INTERVAL = 3000;
+    ij.LITE_INTERVAL = 3000;
 
     /**
      * GSRP Mode
@@ -65,7 +72,7 @@ Blocklist.inject = {};
     ij.listenMessage = function() {
         var that = ij;
         chrome.runtime.onMessage.addListener(function(request, sender, sendMessage) {
-            Blocklist.logger.info('chrome.runtime.onMessage', request);
+            Blocklist.logger.log('chrome.runtime.onMessage', request);
             switch (request.type) {
                 case Blocklist.type.SEND_BLOCKLIST:
                     that._blocklist = request.blocklist;
@@ -92,23 +99,53 @@ Blocklist.inject = {};
     };
 
     ij.callbackResponse = function(response) {
-        Blocklist.logger.info('callbackResponse', response.type, response);
+        Blocklist.logger.info('callbackResponse', response);
+
         switch (response.type) {
-            case Blocklist.type.SEND_GSRP_MODE:
+
+            case Blocklist.type.SEND_FLAG_OPTIONS:
+
                 ij.GSRP_MODE_CHANGED = ij.GSRP_MODE !== response.gsrpMode;
                 ij.GSRP_MODE = response.gsrpMode;
+
+                ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER = response.flagGsrThumbnailImageViewer;
+                ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER_ONELINE = response.flagGsrThumbnailImageViewerOneline;
+                ij.FLAG_GSR_BLOCK_BUTTONS = response.flagGsrBlockButtons;
+
+                break;
+
+            case Blocklist.type.REQUESTED_PARSE_URL:
+                if (!ij._parsedUrl[response.data.url]) {
+                    ij._parsedUrl[response.data.url] = {
+                        lineId: response.data.lineId,
+                        url: response.data.url,
+                        imageUrls: [],
+                        status: 'requested'
+                    };
+                }
+
+                break;
+
+            case Blocklist.type.SEND_PARSED_URL_LIST:
+                ij._parsedUrl = response.data.urlList;
+
                 break;
 
             case Blocklist.type.SEND_BLOCKLIST:
             case Blocklist.type.GET_BLOCK_URL:
                 ij._blocklist = response.data.blocklist;
-                var list = response.data.blocklist, compiled = [];
+
+                var list = response.data.blocklist || [];
+                var compiled = [];
+
                 for (var i = 0, len = list.length; i < len; i++) {
                     var url = list[i];
                     compiled.push(new RegExp(url));
                 }
+
                 ij._compiled_blocklist = compiled;
                 ij.refreshBlocklistAfter();
+
                 break;
 
             default:
@@ -181,38 +218,43 @@ Blocklist.inject = {};
      * @return void
      */
     ij.showLineMatchBlocklist = function() {
-        if (!ij._blocklist) {
-            return;
-        }
         var results = this.fetchSearchResults();
         if (!results || !results.length) {
             return;
         }
+
         var len = results.length;
         var regexp = new RegExp(ij.BLOCKED_NAME, 'g');
+
         Blocklist.logger.log('showLineMatchBlocklist - target.length = ', len);
+
         for (var i = 0; i < len; i++) {
             var line = results[i];
+
             var anchor = ij.fetchSearchResultURL(line);
             if (!anchor) {
                 continue;
             }
-            var url = anchor.getAttribute('href');
-            var targetUrl = null;
-            //url = '/url?url=' + encodeURIComponent(url);
-            //var targetUrl = 'https://www.google.co.jp/url?url=' + encodeURIComponent(url);
-            if (url.indexOf('/') === 0 || url.indexOf('https://www.google.') === 0) {
-                var getParams = Blocklist.common.getUrlVars(url);
+
+            var rawUrl = anchor.getAttribute('href');
+            var parseTargetUrl = null;
+            var blockTargetUrl = null;
+
+            if (rawUrl.indexOf('/') === 0 || rawUrl.indexOf('https://www.google.') === 0) {
+                var getParams = Blocklist.common.getUrlVars(rawUrl);
                 if (getParams && getParams.url) {
-                    targetUrl = Blocklist.common.getAfterScheme(getParams.url);
+                    parseTargetUrl = getParams.url;
+                    blockTargetUrl = Blocklist.common.getAfterScheme(getParams.url);
                 }
             }
-            if (targetUrl === null) {
-                targetUrl = Blocklist.common.getAfterScheme(url);
+
+            if (blockTargetUrl === null) {
+                parseTargetUrl = rawUrl;
+                blockTargetUrl = Blocklist.common.getAfterScheme(rawUrl);
             }
-            //Blocklist.logger.debug(url, targetUrl);
+
             var blocked = false;
-            if (ij.isBlocked(targetUrl)) {
+            if (ij.isBlocked(blockTargetUrl)) {
                 blocked = true;
                 line.style.backgroundColor = '#dddddd';
                 line.style.padding = '10px';
@@ -220,63 +262,135 @@ Blocklist.inject = {};
                     line.className = line.className + ' ' + ij.BLOCKED_NAME;
                 }
             } else {
-                //Blocklist.logger.debug(
-                //    'else', ij.BLOCKED_NAME, line.className,
-                //    line.className.indexOf(ij.BLOCKED_NAME)
-                //);
                 if (-1 < line.className.indexOf(ij.BLOCKED_NAME)) {
                     line.className = line.className.replace(regexp, '');
                 }
             }
+
             line.style.display = 'block';
 
             var elements = line.querySelectorAll('.blocklist-for-gsr-buttons');
             if (elements.length === 0) {
-                line.appendChild(this.getRowActionButtons(blocked, targetUrl));
+                line.appendChild(this.getRowActionButtons(blocked, blockTargetUrl));
+            }
+
+            if (ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER === 2) {
+                var imagesElement = line.querySelector('.blocklist-for-gsr-images');
+                if (imagesElement) {
+                    imagesElement.style.display = 'none';
+                }
+                return;
+            }
+
+            if (!ij._parsedUrl[parseTargetUrl]) {
+                Blocklist.logger.log(
+                    'REQUEST_PARSE_URL: '
+                    + 'lineId[' + i + '] '
+                    + 'url[' + parseTargetUrl + ']'
+                );
+                ij.sendRequest(
+                    Blocklist.type.REQUEST_PARSE_URL,
+                    { lineId: i, url: parseTargetUrl }
+                );
+            } else {
+                var parsedUrl = ij._parsedUrl[parseTargetUrl];
+
+                if (parsedUrl.status === 'parsed') {
+                    if (!('imageUrls' in parsedUrl) || !parsedUrl.imageUrls.length) {
+                        return;
+                    }
+
+                    var images = line.querySelectorAll('.blocklist-for-gsr-images');
+                    if (!images || !images.length) {
+                        var imageWrapper = document.createElement('div');
+                        imageWrapper.className = 'blocklist-for-gsr-images';
+                        imageWrapper.setAttribute('style', 'line-height:0;');
+
+                        var imageStyles = [];
+                        imageStyles.push('display:inline-block;');
+                        imageStyles.push('background-color:#ccc;');
+                        imageStyles.push('background-position:center center;');
+                        imageStyles.push('background-repeat:no-repeat;');
+                        imageStyles.push('margin:5px 5px 0 0;');
+                        imageStyles.push('width:50px;');
+                        imageStyles.push('height:50px;');
+                        imageStyles.push('border:1px solid #ccc;');
+                        imageStyles.push('background-size:cover;');
+
+                        parsedUrl.imageUrls.forEach(function(imageUrl) {
+                            var div = document.createElement('div');
+                            div.setAttribute(
+                                'style',
+                                imageStyles.join('') + 'background-image:url(' + imageUrl + ');'
+                            );
+                            div.onclick = function() {
+                                window.open(imageUrl);
+                            };
+                            imageWrapper.appendChild(div);
+                        });
+
+                        line.appendChild(imageWrapper);
+                    }
+                }
+            }
+
+            var imagesElement = line.querySelector('.blocklist-for-gsr-images');
+            if (imagesElement) {
+                if (ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER_ONELINE === 1) {
+                    imagesElement.style.height = '60px';
+                    imagesElement.style.overflow = 'hidden';
+                } else {
+                    imagesElement.style.height = 'auto';
+                    imagesElement.style.overflow = 'auto';
+                }
             }
         }
     };
 
     ij.hideLineMatchBlocklist = function() {
-        if (!this._blocklist) {
-            return;
-        }
         var results = this.fetchSearchResults();
         if (!results || !results.length) {
             return;
         }
+
         var len = results.length;
         var regexp = new RegExp(this.BLOCKED_NAME, 'g');
+
         Blocklist.logger.log('hideLineMatchBlocklist - target.length =', len);
+
         for (var i = 0; i < len; i++) {
             var line = results[i];
+
             var anchor = this.fetchSearchResultURL(line);
             if (!anchor) {
                 continue;
             }
+
             var url = anchor.getAttribute('href');
             var targetUrl = null;
-            //url = '/url?url=' + encodeURIComponent(url);
-            //var targetUrl = 'https://www.google.co.jp/url?url=' + encodeURIComponent(url);
+
             if (url.indexOf('/') === 0 || url.indexOf('https://www.google.') === 0) {
                 var getParams = Blocklist.common.getUrlVars(url);
                 if (getParams && getParams.url) {
                     targetUrl = Blocklist.common.getAfterScheme(getParams.url);
                 }
             }
+
             if (targetUrl === null) {
                 targetUrl = Blocklist.common.getAfterScheme(url);
             }
-            //Blocklist.logger.debug(url, targetUrl);
+
             var blocked = false;
             if (ij.isBlocked(targetUrl)) {
                 blocked = true;
                 line.style.display = 'none';
+
                 if (line.className.indexOf(ij.BLOCKED_NAME) === -1) {
                     line.className = line.className + ' ' + ij.BLOCKED_NAME;
                 }
             } else {
                 line.style.display = 'block';
+
                 if (-1 < line.className.indexOf(ij.BLOCKED_NAME)) {
                     line.className = line.className.replace(regexp, '');
                 }
@@ -323,6 +437,7 @@ Blocklist.inject = {};
 
         var div = document.createElement('div');
         div.className = 'blocklist-for-gsr-buttons';
+
         var btnUrl = ij.addButton(
             'URL をブロック',
             'ab_button blocklist-for-gsr-button'
@@ -331,6 +446,7 @@ Blocklist.inject = {};
         btnUrl.setAttribute('data-url', url);
         btnUrl.setAttribute('data-type', 'blocked-url');
         div.appendChild(btnUrl);
+
         var btnDomain = this.addButton(
             'ドメインをブロック',
             'ab_button blocklist-for-gsr-button'
@@ -339,6 +455,7 @@ Blocklist.inject = {};
         btnDomain.setAttribute('data-url', url);
         btnDomain.setAttribute('data-type', 'blocked-domain');
         div.appendChild(btnDomain);
+
         return div;
     };
 
@@ -350,15 +467,29 @@ Blocklist.inject = {};
             var line = elements[i];
             line.className = line.className.replace(regexp, '');
         }
+
+        // TODO
+        // 幅にあわせて画像の表示領域も変更
+        // 右サイドバーのオンオフ
+        // ボタンのオンオフ
+        // 画像サムネイルのオンオフ
     };
 
     ij.execute = function() {
-        this.sendRequest(
-            Blocklist.type.GET_GSRP_MODE,
+        ij.sendRequest(
+            Blocklist.type.GET_FLAG_OPTIONS,
             null,
-            this.callbackResponse
+            ij.callbackResponse
         );
-        this.refreshBlocklist();
+        ij.refreshBlocklist();
+    };
+
+    ij.executeParsedUrl = function() {
+        ij.sendRequest(
+            Blocklist.type.GET_PARSED_URL_LIST,
+            null,
+            ij.callbackResponse
+        );
     };
 
     ij.addedMark = function() {
@@ -377,22 +508,29 @@ Blocklist.inject = {};
         ij.addMark();
         Blocklist.logger.info('INJECTED');
         ij.execute();
-        ij.setInterval(ij.INTERVAL);
+        ij.setSchedules();
     };
 
     ij.end = function() {
         ij.clearInterval(ij.timerId);
+        ij.clearInterval(ij.liteTimerId);
     };
 
-    ij.setInterval = function(time) {
-        Blocklist.logger.info('Set interval', time, 'sec.');
+    ij.setSchedules = function() {
+        Blocklist.logger.info('Set schedules');
+
         ij.timerId = window.setInterval(function() {
             ij.execute();
-        }, time);
+        }, ij.INTERVAL);
+
+        ij.liteTimerId = window.setInterval(function() {
+            ij.executeParsedUrl();
+        }, ij.LITE_INTERVAL);
     };
 
     ij.clearInterval = function(timerId) {
         Blocklist.logger.info('Clear interval', timerId);
+
         window.clearInterval(timerId);
     };
 
@@ -423,17 +561,39 @@ Blocklist.inject = {};
     ij.handleLine = function(mode) {
         Blocklist.logger.time('Handled Line');
         Blocklist.logger.log('Handled Line - Mode', mode);
+
         this.countUp();
+
         Blocklist.logger.info('COUNTER', this.COUNTER);
+
         if (this.COUNTER % 10 === 0) {
             Blocklist.logger.clear();
             Blocklist.logger.log('Handled Line - CLEAR!');
         }
-        if (mode === 'show') {
-            this.showLineMatchBlocklist();
-        } else {
+
+        if (mode === 'hide') {
             this.hideLineMatchBlocklist();
+        } else {
+            this.showLineMatchBlocklist();
         }
+
+        Blocklist.logger.info('FLAG_OPTIONS', {
+            FLAG_GSR_THUMBNAIL_IMAGE_VIEWER: ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER,
+            FLAG_GSR_THUMBNAIL_IMAGE_VIEWER_ONELINE: ij.FLAG_GSR_THUMBNAIL_IMAGE_VIEWER_ONELINE,
+            FLAG_GSR_BLOCK_BUTTONS: ij.FLAG_GSR_BLOCK_BUTTONS
+        });
+
+        var elements = document.querySelectorAll('.blocklist-for-gsr-buttons');
+        if (0 < elements.length) {
+            for (var i = 0; i < elements.length; i++) {
+                if (ij.FLAG_GSR_BLOCK_BUTTONS === 1) {
+                    elements[i].style.display = 'block';
+                } else {
+                    elements[i].style.display = 'none';
+                }
+            }
+        }
+
         var elements = document.querySelectorAll('.blocklist-for-gsr-button');
         if (0 < elements.length) {
             for (var i = 0; i < elements.length; i++) {
@@ -441,6 +601,7 @@ Blocklist.inject = {};
                 elements[i].addEventListener('click', ij.onClickCallback);
             }
         }
+
         Blocklist.logger.timeEnd('Handled Line');
     };
 
